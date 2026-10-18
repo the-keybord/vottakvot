@@ -2467,10 +2467,11 @@ textarea.form-control {
 
 .gateway-input-box {
   width: 100%;
-  height: 72px;
+  min-height: 74px;
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   background: var(--bg-card);
   backdrop-filter: blur(28px);
   border: 1.5px solid var(--border-color);
@@ -2478,8 +2479,7 @@ textarea.form-control {
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.1), 0 0 35px rgba(99, 102, 241, 0.06);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
-  padding: 0;
-  overflow: hidden;
+  padding: 0.8rem 54px;
 }
 
 .gateway-input-box:focus-within {
@@ -2490,34 +2490,57 @@ textarea.form-control {
 
 .gateway-code-input {
   width: 100%;
-  height: 100%;
   background: transparent;
   border: none;
   outline: none;
   font-family: var(--font-mono);
-  font-size: 2.2rem;
-  font-weight: 800;
-  letter-spacing: 0.3em;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-indent: 0.25em; /* Perfectly balances trailing letter spacing horizontally */
   text-transform: uppercase;
   color: var(--text-main);
   text-align: center;
-  /* Equal padding on left and right so text is centered */
-  padding: 0 56px;
+  padding: 0;
   margin: 0;
-  line-height: normal;
-  display: flex;
-  align-items: center;
+  line-height: 1.2;
   box-sizing: border-box;
 }
 
 .gateway-code-input::placeholder {
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.25em;
+  text-indent: 0.25em;
   color: var(--text-dim);
   text-align: center;
-  opacity: 0.5;
+  opacity: 0.45;
+  line-height: 1.2;
+}
+
+.gateway-code-input::-webkit-input-placeholder {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-indent: 0.25em;
+  color: var(--text-dim);
+  text-align: center;
+  opacity: 0.45;
+  line-height: 1.2;
+}
+
+.gateway-code-input::-moz-placeholder {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-indent: 0.25em;
+  color: var(--text-dim);
+  text-align: center;
+  opacity: 0.45;
+  line-height: 1.2;
 }
 
 .gateway-arrow-btn {
@@ -2528,7 +2551,7 @@ textarea.form-control {
   background: transparent;
   border: none;
   color: var(--text-dim);
-  padding: 8px;
+  padding: 6px;
   margin: 0;
   display: flex;
   align-items: center;
@@ -2562,23 +2585,27 @@ textarea.form-control {
   }
 
   .gateway-input-box {
-    height: 60px;
+    min-height: 62px;
+    padding: 0.6rem 44px;
   }
 
   .gateway-code-input {
-    font-size: 1.6rem;
-    letter-spacing: 0.2em;
-    padding: 0 46px;
+    font-size: 1.5rem;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
   }
 
-  .gateway-code-input::placeholder {
-    font-size: 0.95rem;
-    letter-spacing: 0.08em;
+  .gateway-code-input::placeholder,
+  .gateway-code-input::-webkit-input-placeholder,
+  .gateway-code-input::-moz-placeholder {
+    font-size: 1.15rem;
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
   }
 
   .gateway-arrow-btn {
     right: 14px;
-    padding: 6px;
+    padding: 4px;
   }
 }
 
