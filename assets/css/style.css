@@ -2397,6 +2397,165 @@ textarea.form-control {
   opacity: 0.5;
 }
 
+/* =================================================================
+   Minimalist Gateway Page (Full Screen Centered)
+   ================================================================= */
+.gateway-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gateway-header {
+  padding: 1.75rem 2.5rem;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  backdrop-filter: none;
+}
+
+.gateway-brand {
+  font-family: var(--font-heading);
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--text-main);
+  text-decoration: none;
+  transition: var(--transition);
+  display: inline-block;
+}
+
+.gateway-brand:hover {
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.gateway-teacher-link {
+  opacity: 0.5;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: opacity 0.2s ease;
+}
+
+.gateway-teacher-link:hover {
+  opacity: 1;
+}
+
+.gateway-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  margin-top: -4vh; /* Perfectly visually balances with the header */
+}
+
+.gateway-search-form {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.gateway-input-box {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  backdrop-filter: blur(28px);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 0.65rem 0.85rem 0.65rem 2rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12), 0 0 35px rgba(99, 102, 241, 0.08);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gateway-input-box:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18), 0 0 45px rgba(99, 102, 241, 0.22);
+  transform: translateY(-3px);
+}
+
+.gateway-code-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  text-align: center;
+  padding: 0.6rem 0;
+}
+
+.gateway-code-input::placeholder {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-align: center;
+  opacity: 0.6;
+}
+
+.gateway-submit-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.gateway-submit-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.gateway-submit-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 640px) {
+  .gateway-header {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .gateway-brand {
+    font-size: 1.6rem;
+  }
+
+  .gateway-input-box {
+    padding: 0.5rem 0.65rem 0.5rem 1.25rem;
+  }
+
+  .gateway-code-input {
+    font-size: 1.6rem;
+    letter-spacing: 0.2em;
+  }
+
+  .gateway-code-input::placeholder {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+  }
+
+  .gateway-submit-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+
 
 
 
