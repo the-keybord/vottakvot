@@ -113,7 +113,7 @@ if (!empty($code)) {
                     autofocus
                     required
                 >
-                <button type="submit" class="gateway-submit-btn" id="btnSubmitSearch" aria-label="Access Code">
+                <button type="submit" class="gateway-arrow-btn" id="btnSubmitSearch" aria-label="Access Code">
                     <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                     </svg>
