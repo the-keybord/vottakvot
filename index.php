@@ -64,7 +64,7 @@ if (!empty($code)) {
         exit;
     }
 
-    // Handle Type 2 & 3: Text / File Console Display
+    // Handle Type 2, 3 & 5: Text / File Console / Link List Display
     require __DIR__ . '/view.php';
     exit;
 }

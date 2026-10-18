@@ -141,6 +141,13 @@ $baseUrl = get_base_url();
                                     } elseif ($r['type'] === 'hosting') {
                                         $sStats = get_site_summary($r['code']);
                                         $preview = "Web Directory: sites/{$r['code']}/ • {$sStats['total_files']} files ({$sStats['total_size_formatted']})";
+                                    } elseif ($r['type'] === 'links') {
+                                        $linksData = json_decode($r['content_text'] ?? '[]', true) ?: [];
+                                        $lCount = count($linksData);
+                                        $preview = "Link List: {$lCount} " . ($lCount === 1 ? 'button' : 'buttons');
+                                        if ($lCount > 0 && !empty($linksData[0]['title'])) {
+                                            $preview .= " • " . mb_strimwidth($linksData[0]['title'], 0, 35, '...');
+                                        }
                                     } else {
                                         $fStats = get_resource_files_summary($pdo, (int)$r['id']);
                                         $preview = "MinIO folder: {$r['code']}/ • {$fStats['total_files']} files ({$fStats['total_size_formatted']})";
@@ -167,6 +174,8 @@ $baseUrl = get_base_url();
                                             <span class="badge badge-text">📝 Note</span>
                                         <?php elseif ($r['type'] === 'hosting'): ?>
                                             <span class="badge badge-hosting">🌐 Micro-host</span>
+                                        <?php elseif ($r['type'] === 'links'): ?>
+                                            <span class="badge badge-links">📑 Link List</span>
                                         <?php else: ?>
                                             <span class="badge badge-files">📁 File Console</span>
                                         <?php endif; ?>
@@ -232,7 +241,7 @@ $baseUrl = get_base_url();
             </div>
             <form id="resourceForm">
                 <div class="modal-body">
-                    <!-- Type Selection Tabs (4 Options) -->
+                    <!-- Type Selection Tabs (5 Options) -->
                     <label class="form-label">Resource Type</label>
                     <div class="type-selector-tabs">
                         <div class="type-tab active" data-type="redirect">
@@ -242,6 +251,10 @@ $baseUrl = get_base_url();
                         <div class="type-tab" data-type="text">
                             <span>📝</span>
                             <span>Shared Note</span>
+                        </div>
+                        <div class="type-tab" data-type="links">
+                            <span>📑</span>
+                            <span>Link List</span>
                         </div>
                         <div class="type-tab" data-type="files">
                             <span>📁</span>
@@ -338,6 +351,26 @@ $baseUrl = get_base_url();
                         </div>
                     </div>
 
+                    <!-- Link List Builder Field -->
+                    <div id="fieldLinksContent" class="form-group" style="display: none;">
+                        <div class="link-builder-wrapper">
+                            <div class="link-builder-header">
+                                <div>
+                                    <div style="font-weight: 700; color: var(--accent-cyan); font-size: 0.95rem;">📑 Link List Buttons</div>
+                                    <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                        Add interactive buttons that redirect students to other links or TikTak 6-letter codes.
+                                    </p>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btnCreateAddLink">
+                                    + Add Button
+                                </button>
+                            </div>
+                            <div id="createLinksContainer" class="link-items-list">
+                                <!-- Dynamic link items -->
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Expiration Delay Presets -->
                     <div class="form-group">
                         <label class="form-label">Expiration Delay</label>
@@ -407,6 +440,24 @@ $baseUrl = get_base_url();
                             <button type="button" class="btn btn-primary btn-sm" id="btnEditOpenManager">
                                 Open Manager ⚙️
                             </button>
+                        </div>
+                    </div>
+                    <div id="editFieldLinks" class="form-group" style="display: none;">
+                        <div class="link-builder-wrapper">
+                            <div class="link-builder-header">
+                                <div>
+                                    <div style="font-weight: 700; color: var(--accent-cyan); font-size: 0.95rem;">📑 Edit Link Buttons</div>
+                                    <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                        Add, edit, or remove destination buttons for this link list.
+                                    </p>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btnEditAddLink">
+                                    + Add Button
+                                </button>
+                            </div>
+                            <div id="editLinksContainer" class="link-items-list">
+                                <!-- Dynamic link items -->
+                            </div>
                         </div>
                     </div>
                 </div>

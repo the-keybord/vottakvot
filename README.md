@@ -9,13 +9,15 @@ TikTak is a clean, lightweight, and ultra-fast web application tailored for teac
 - **Resource Types**:
   1. **Redirect Link**: Instantly routes students to external materials (e.g. Google Drive, GitHub, Canvas, Zoom).
   2. **Shared Text / Notes**: Clean distraction-free note viewer (Dontpad-style) with 1-click copy, download as `.txt`, and visit counter.
-  3. **MinIO File Console**: Dedicated S3/MinIO bucket folder per code.
+  3. **Link List**: Clean distraction-free blank page with a title and a list of interactive destination buttons/redirects. Fully editable with in-place and dashboard button builders.
+  4. **MinIO File Console**: Dedicated S3/MinIO bucket folder per code.
      - Anonymous uploads & downloads under 500 MB per file.
      - Files organized by upload date in a single-day full-width card view with day navigation arrows (skips empty days).
      - Heavy files (> 100 MB) highlighted with a glowing red warning alert for teachers.
      - Automatic duplicate filename suffixing (`_01`, `_02`, etc.).
      - 📌 **Pinned Materials**: Teachers can pin important files to a persistent top section.
      - Role-based security: only professors can delete or pin files.
+  5. **Micro-hosting**: Dynamic web directory hosting index.php, HTML, CSS, JavaScript, and ZIP exports.
 - **In-Page Teacher Login**:
   - Direct login modal on any code page to unlock teacher capabilities instantly.
 - **Multi-Teacher Management**:

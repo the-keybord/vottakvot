@@ -29,7 +29,7 @@ CREATE TABLE `resources` (
   `user_id` int DEFAULT NULL,
   `code` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `type` enum('redirect','text','files','hosting') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'redirect',
+  `type` enum('redirect','text','files','hosting','links') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'redirect',
   `content_link` text COLLATE utf8mb4_unicode_ci,
   `content_text` longtext COLLATE utf8mb4_unicode_ci,
   `visits_count` int NOT NULL DEFAULT '0',

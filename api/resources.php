@@ -35,7 +35,7 @@ if ($action === 'create') {
     $code = strtoupper(trim($input['code'] ?? ''));
     $title = trim($input['title'] ?? '');
     $rawType = $input['type'] ?? 'redirect';
-    $type = in_array($rawType, ['redirect', 'text', 'files', 'hosting']) ? $rawType : 'redirect';
+    $type = in_array($rawType, ['redirect', 'text', 'files', 'hosting', 'links']) ? $rawType : 'redirect';
     $contentLink = trim($input['content_link'] ?? '');
     $contentText = trim($input['content_text'] ?? '');
     $expiryPreset = $input['expiry_preset'] ?? 'never';
@@ -76,6 +76,38 @@ if ($action === 'create') {
         if ($indexPath) {
             file_put_contents($indexPath, $indexContent);
         }
+    } elseif ($type === 'links') {
+        // Parse and clean link list
+        $links = [];
+        if (!empty($input['links']) && is_array($input['links'])) {
+            $links = $input['links'];
+        } elseif (!empty($contentText)) {
+            $decoded = json_decode($contentText, true);
+            if (is_array($decoded)) {
+                $links = $decoded;
+            }
+        }
+        $cleanLinks = [];
+        foreach ($links as $lnk) {
+            $lTitle = trim($lnk['title'] ?? '');
+            $lUrl = trim($lnk['url'] ?? '');
+            if ($lTitle === '' && $lUrl === '') continue;
+            if ($lTitle === '') $lTitle = $lUrl;
+            if (!empty($lUrl)) {
+                if (preg_match('/^[A-Za-z0-9]{3,10}$/', $lUrl)) {
+                    $lUrl = '/code=' . strtoupper($lUrl);
+                } elseif (preg_match('/^code=([A-Za-z0-9]{3,10})$/i', $lUrl, $m)) {
+                    $lUrl = '/code=' . strtoupper($m[1]);
+                } elseif (!preg_match('~^(https?://|/|#)~i', $lUrl)) {
+                    $lUrl = 'https://' . $lUrl;
+                }
+            }
+            $cleanLinks[] = [
+                'title' => $lTitle,
+                'url' => $lUrl
+            ];
+        }
+        $contentText = json_encode($cleanLinks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     if (empty($title)) {
@@ -85,6 +117,8 @@ if ($action === 'create') {
             $title = 'Shared Note ' . $code;
         } elseif ($type === 'hosting') {
             $title = 'Micro Site ' . $code;
+        } elseif ($type === 'links') {
+            $title = 'Link List ' . $code;
         } else {
             $title = 'File Console ' . $code;
         }
@@ -155,6 +189,30 @@ if ($action === 'update') {
 
     if (!empty($contentLink) && !preg_match('~^https?://~i', $contentLink)) {
         $contentLink = 'https://' . $contentLink;
+    }
+
+    if (!empty($input['links']) && is_array($input['links'])) {
+        $cleanLinks = [];
+        foreach ($input['links'] as $lnk) {
+            $lTitle = trim($lnk['title'] ?? '');
+            $lUrl = trim($lnk['url'] ?? '');
+            if ($lTitle === '' && $lUrl === '') continue;
+            if ($lTitle === '') $lTitle = $lUrl;
+            if (!empty($lUrl)) {
+                if (preg_match('/^[A-Za-z0-9]{3,10}$/', $lUrl)) {
+                    $lUrl = '/code=' . strtoupper($lUrl);
+                } elseif (preg_match('/^code=([A-Za-z0-9]{3,10})$/i', $lUrl, $m)) {
+                    $lUrl = '/code=' . strtoupper($m[1]);
+                } elseif (!preg_match('~^(https?://|/|#)~i', $lUrl)) {
+                    $lUrl = 'https://' . $lUrl;
+                }
+            }
+            $cleanLinks[] = [
+                'title' => $lTitle,
+                'url' => $lUrl
+            ];
+        }
+        $contentText = json_encode($cleanLinks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     // Only allow updating own resources

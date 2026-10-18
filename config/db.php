@@ -90,7 +90,7 @@ function initialize_mysql_schema(PDO $pdo) {
         `user_id` INT NULL,
         `code` VARCHAR(10) NOT NULL UNIQUE,
         `title` VARCHAR(255) NOT NULL DEFAULT '',
-        `type` ENUM('redirect', 'text', 'files', 'hosting') NOT NULL DEFAULT 'redirect',
+        `type` ENUM('redirect', 'text', 'files', 'hosting', 'links') NOT NULL DEFAULT 'redirect',
         `content_link` TEXT NULL,
         `content_text` LONGTEXT NULL,
         `visits_count` INT NOT NULL DEFAULT 0,
@@ -102,9 +102,9 @@ function initialize_mysql_schema(PDO $pdo) {
         INDEX (`user_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
-    // Auto-update enum if previously created without 'files' or 'hosting'
+    // Auto-update enum if previously created without 'files', 'hosting', or 'links'
     try {
-        $pdo->exec("ALTER TABLE `resources` MODIFY COLUMN `type` ENUM('redirect', 'text', 'files', 'hosting') NOT NULL DEFAULT 'redirect'");
+        $pdo->exec("ALTER TABLE `resources` MODIFY COLUMN `type` ENUM('redirect', 'text', 'files', 'hosting', 'links') NOT NULL DEFAULT 'redirect'");
     } catch (\Throwable $e) {
         // Ignore if already updated or permissions restricted
     }

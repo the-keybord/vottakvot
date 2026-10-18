@@ -40,6 +40,7 @@ function initResourceForm() {
             const textField = document.getElementById('fieldTextContent');
             const filesField = document.getElementById('fieldFilesInfo');
             const hostingField = document.getElementById('fieldHostingContent');
+            const linksField = document.getElementById('fieldLinksContent');
             const inputLink = document.getElementById('inputLink');
             const inputText = document.getElementById('inputText');
             
@@ -48,6 +49,7 @@ function initResourceForm() {
                 if (textField) textField.style.display = 'none';
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'none';
+                if (linksField) linksField.style.display = 'none';
                 if (inputLink) inputLink.required = true;
                 if (inputText) inputText.required = false;
             } else if (currentResourceType === 'text') {
@@ -55,13 +57,28 @@ function initResourceForm() {
                 if (textField) textField.style.display = 'block';
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'none';
+                if (linksField) linksField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = true;
+            } else if (currentResourceType === 'links') {
+                if (linkField) linkField.style.display = 'none';
+                if (textField) textField.style.display = 'none';
+                if (filesField) filesField.style.display = 'none';
+                if (hostingField) hostingField.style.display = 'none';
+                if (linksField) linksField.style.display = 'block';
+                if (inputLink) inputLink.required = false;
+                if (inputText) inputText.required = false;
+                const createList = document.getElementById('createLinksContainer');
+                if (createList && createList.children.length === 0) {
+                    addLinkRow('createLinksContainer', '', '');
+                    addLinkRow('createLinksContainer', '', '');
+                }
             } else if (currentResourceType === 'files') {
                 if (linkField) linkField.style.display = 'none';
                 if (textField) textField.style.display = 'none';
                 if (filesField) filesField.style.display = 'block';
                 if (hostingField) hostingField.style.display = 'none';
+                if (linksField) linksField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 updateNoticeCodes();
@@ -70,6 +87,7 @@ function initResourceForm() {
                 if (textField) textField.style.display = 'none';
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'block';
+                if (linksField) linksField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 updateNoticeCodes();
@@ -81,6 +99,16 @@ function initResourceForm() {
             }
         });
     });
+
+    // Add Link Row button events
+    const btnCreateAddLink = document.getElementById('btnCreateAddLink');
+    if (btnCreateAddLink) {
+        btnCreateAddLink.addEventListener('click', () => addLinkRow('createLinksContainer'));
+    }
+    const btnEditAddLink = document.getElementById('btnEditAddLink');
+    if (btnEditAddLink) {
+        btnEditAddLink.addEventListener('click', () => addLinkRow('editLinksContainer'));
+    }
 
     const codeInput = document.getElementById('inputCode');
     if (codeInput) {
@@ -379,6 +407,45 @@ window.addEventListener('click', (e) => {
 });
 
 /**
+ * Link List Dynamic Row Helpers
+ */
+function addLinkRow(containerId, title = '', url = '') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'link-item-row';
+    row.innerHTML = `
+        <span class="link-item-handle" title="Button link">🔗</span>
+        <div class="link-item-fields">
+            <input type="text" class="form-control link-title-input" placeholder="Button Label (e.g. Lecture Slides, Quiz 1)" value="${escapeHtmlAttr(title)}">
+            <input type="text" class="form-control link-url-input" placeholder="Destination URL or 6-letter Code (e.g. https://... or ABCDEF)" value="${escapeHtmlAttr(url)}">
+        </div>
+        <button type="button" class="link-item-remove" title="Remove this button" onclick="this.closest('.link-item-row').remove()">&times;</button>
+    `;
+    container.appendChild(row);
+}
+
+function escapeHtmlAttr(str) {
+    if (!str) return '';
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function collectLinks(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    const rows = container.querySelectorAll('.link-item-row');
+    const links = [];
+    rows.forEach(r => {
+        const title = r.querySelector('.link-title-input')?.value.trim() || '';
+        const url = r.querySelector('.link-url-input')?.value.trim() || '';
+        if (title !== '' || url !== '') {
+            links.push({ title: title || url, url: url });
+        }
+    });
+    return links;
+}
+
+/**
  * Handle Resource Creation via AJAX
  */
 async function handleResourceSubmit(e) {
@@ -389,10 +456,20 @@ async function handleResourceSubmit(e) {
     submitBtn.innerText = 'Creating...';
 
     let contentText = '';
+    let linksArray = null;
     if (currentResourceType === 'text') {
         contentText = document.getElementById('inputText')?.value || '';
     } else if (currentResourceType === 'hosting') {
         contentText = document.getElementById('inputHostingCode')?.value || '';
+    } else if (currentResourceType === 'links') {
+        linksArray = collectLinks('createLinksContainer');
+        if (linksArray.length === 0) {
+            showToast('Please add at least one button to the link list.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Create Resource';
+            return;
+        }
+        contentText = JSON.stringify(linksArray);
     }
 
     const formData = {
@@ -402,6 +479,7 @@ async function handleResourceSubmit(e) {
         type: currentResourceType,
         content_link: document.getElementById('inputLink') ? document.getElementById('inputLink').value.trim() : '',
         content_text: contentText,
+        links: linksArray,
         expiry_preset: currentExpiryPreset,
         custom_expiry: document.getElementById('inputCustomExpiry') ? document.getElementById('inputCustomExpiry').value : ''
     };
@@ -471,6 +549,7 @@ function openEditModal(resource) {
     const textContainer = document.getElementById('editFieldText');
     const filesContainer = document.getElementById('editFieldFiles');
     const hostingContainer = document.getElementById('editFieldHosting');
+    const linksContainer = document.getElementById('editFieldLinks');
     const consoleLink = document.getElementById('editConsoleLink');
     const btnEditOpenManager = document.getElementById('btnEditOpenManager');
 
@@ -479,18 +558,42 @@ function openEditModal(resource) {
         if (textContainer) textContainer.style.display = 'none';
         if (filesContainer) filesContainer.style.display = 'none';
         if (hostingContainer) hostingContainer.style.display = 'none';
+        if (linksContainer) linksContainer.style.display = 'none';
         document.getElementById('editInputLink').value = resource.content_link || '';
     } else if (resource.type === 'text') {
         if (linkContainer) linkContainer.style.display = 'none';
         if (textContainer) textContainer.style.display = 'block';
         if (filesContainer) filesContainer.style.display = 'none';
         if (hostingContainer) hostingContainer.style.display = 'none';
+        if (linksContainer) linksContainer.style.display = 'none';
         document.getElementById('editInputText').value = resource.content_text || '';
+    } else if (resource.type === 'links') {
+        if (linkContainer) linkContainer.style.display = 'none';
+        if (textContainer) textContainer.style.display = 'none';
+        if (filesContainer) filesContainer.style.display = 'none';
+        if (hostingContainer) hostingContainer.style.display = 'none';
+        if (linksContainer) linksContainer.style.display = 'block';
+        const editList = document.getElementById('editLinksContainer');
+        if (editList) {
+            editList.innerHTML = '';
+            let items = [];
+            try {
+                items = JSON.parse(resource.content_text || '[]');
+            } catch (e) {
+                items = [];
+            }
+            if (Array.isArray(items) && items.length > 0) {
+                items.forEach(it => addLinkRow('editLinksContainer', it.title || '', it.url || ''));
+            } else {
+                addLinkRow('editLinksContainer', '', '');
+            }
+        }
     } else if (resource.type === 'hosting') {
         if (linkContainer) linkContainer.style.display = 'none';
         if (textContainer) textContainer.style.display = 'none';
         if (filesContainer) filesContainer.style.display = 'none';
         if (hostingContainer) hostingContainer.style.display = 'block';
+        if (linksContainer) linksContainer.style.display = 'none';
         if (btnEditOpenManager) {
             btnEditOpenManager.onclick = () => {
                 closeModal('editModal');
@@ -503,6 +606,7 @@ function openEditModal(resource) {
         if (textContainer) textContainer.style.display = 'none';
         if (filesContainer) filesContainer.style.display = 'block';
         if (hostingContainer) hostingContainer.style.display = 'none';
+        if (linksContainer) linksContainer.style.display = 'none';
         if (consoleLink) consoleLink.href = `/code=${resource.code}`;
     }
 
@@ -518,7 +622,13 @@ async function handleEditSubmit(e) {
     const title = document.getElementById('editTitle').value;
     const type = document.getElementById('editType').value;
     const contentLink = document.getElementById('editInputLink').value;
-    const contentText = document.getElementById('editInputText').value;
+    let contentText = document.getElementById('editInputText').value;
+    let linksArray = null;
+
+    if (type === 'links') {
+        linksArray = collectLinks('editLinksContainer');
+        contentText = JSON.stringify(linksArray);
+    }
 
     try {
         const res = await fetch('/api/resources.php', {
@@ -529,7 +639,8 @@ async function handleEditSubmit(e) {
                 id: id,
                 title: title,
                 content_link: contentLink,
-                content_text: contentText
+                content_text: contentText,
+                links: linksArray
             })
         });
         const data = await res.json();
