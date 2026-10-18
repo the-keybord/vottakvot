@@ -1,0 +1,28 @@
+# TikTak - Apache / LiteSpeed URL Rewriting
+DirectoryIndex index.php index.html
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Allow existing files and directories to pass through directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route /prof or /prof/ to prof/index.php
+    RewriteRule ^prof/?$ prof/index.php [L,QSA]
+
+    # Route /code=XXXXXX to index.php?code=XXXXXX
+    RewriteRule ^code=([a-zA-Z0-9]{3,10})/?$ index.php?code=$1 [L,QSA]
+
+    # Route 6-letter direct code /ABCDEF to index.php?code=ABCDEF
+    RewriteRule ^([a-zA-Z0-9]{6})/?$ index.php?code=$1 [L,QSA]
+</IfModule>
+
+# Security Headers & Caching
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

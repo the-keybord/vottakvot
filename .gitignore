@@ -1,0 +1,30 @@
+# Environment & credentials
+.env
+.env.local
+*.env
+
+# Local database & data files
+data/
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary files
+scratch/*.tmp
