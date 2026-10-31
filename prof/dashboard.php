@@ -658,22 +658,28 @@ $baseUrl = get_base_url();
 
     <!-- QR Code Modal (Projector View) -->
     <div id="qrModal" class="modal-backdrop">
-        <div class="modal-box" style="max-width: 420px; text-align: center;">
-            <div class="modal-header">
-                <h2 class="modal-title">Classroom Access</h2>
-                <button class="modal-close" onclick="closeModal('qrModal')">&times;</button>
+        <div class="modal-box" style="max-width: 480px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative; border-bottom: none; padding: 1.75rem 1.75rem 0.5rem;">
+                <h2 style="font-family: var(--font-heading); font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-main); margin: 0; line-height: 1.1;">tik.tak.md</h2>
+                <button class="modal-close" onclick="closeModal('qrModal')" style="position: absolute; right: 1.25rem; top: 1.25rem;" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 2rem 1.5rem;">
-                <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.5rem;">Class Access Code</div>
-                <div id="qrModalCode" style="font-family: var(--font-mono); font-size: 2.8rem; font-weight: 800; letter-spacing: 0.25em; color: var(--accent-cyan); margin-bottom: 1.25rem;"></div>
+            <div class="modal-body" style="padding: 0.5rem 1.75rem 1.75rem;">
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.6rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                    <span style="font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--text-muted); text-transform: lowercase;">code:</span>
+                    <span id="qrModalCode" style="font-family: var(--font-mono); font-size: 3rem; font-weight: 800; letter-spacing: 0.2em; color: var(--accent-cyan); line-height: 1;"></span>
+                </div>
                 
                 <div style="background: #ffffff; padding: 1rem; border-radius: var(--radius-md); display: inline-block; box-shadow: var(--shadow-md);">
-                    <img id="qrImage" src="" alt="QR Code" style="width: 220px; height: 220px; display: block;">
+                    <img id="qrImage" src="" alt="QR Code" style="width: 230px; height: 230px; display: block;">
                 </div>
 
-                <div id="qrModalUrl" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1.25rem; word-break: break-all;"></div>
+                <div style="font-size: 0.95rem; color: var(--text-muted); margin-top: 1.25rem; line-height: 1.5; max-width: 340px; margin-left: auto; margin-right: auto;">
+                    Scaneaza codul sau intra pe <strong style="color: var(--text-main);">tik.tak.md</strong> si introdu codul de pe ecran
+                </div>
+
+                <div id="qrModalUrl" style="display: none;"></div>
             </div>
-            <div class="modal-footer" style="justify-content: center;">
+            <div class="modal-footer" style="justify-content: center; border-top: 1px solid var(--border-color); padding: 1rem 1.5rem 1.5rem;">
                 <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('qrModalUrl').innerText, 'URL copied!')">Copy Link</button>
                 <button class="btn btn-primary" onclick="closeModal('qrModal')">Done</button>
             </div>
