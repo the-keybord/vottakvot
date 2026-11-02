@@ -24,17 +24,6 @@ if (!$input) {
     $input = $_POST;
 }
 
-// Detect if POST exceeded server limits and was emptied by PHP
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-    http_response_code(413);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode([
-        'success' => false,
-        'error' => 'Upload failed. The uploaded data (' . format_file_size((int)$_SERVER['CONTENT_LENGTH']) . ') exceeds the server post_max_size limit (currently ' . ini_get('post_max_size') . ').'
-    ]);
-    exit;
-}
-
 $action = $input['action'] ?? ($_GET['action'] ?? '');
 $code = strtoupper(trim($input['code'] ?? ($_GET['code'] ?? '')));
 
@@ -287,6 +276,14 @@ if ($action === 'upload') {
     @ini_set('memory_limit', '512M');
 
     if (empty($_FILES['files'])) {
+        $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($contentLength > 0 && empty($_POST)) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Upload failed. The uploaded file size (' . format_file_size($contentLength) . ') exceeds the server limit (post_max_size: ' . ini_get('post_max_size') . ').'
+            ]);
+            exit;
+        }
         echo json_encode(['success' => false, 'error' => 'No files received. They may exceed the server upload limit.']);
         exit;
     }
