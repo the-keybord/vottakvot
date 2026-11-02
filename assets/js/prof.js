@@ -1178,6 +1178,15 @@ async function deleteSiteFile(filename) {
 async function handleSiteFilesUpload(fileList) {
     if (!fileList || fileList.length === 0) return;
 
+    // Check individual files against 500MB max limit
+    const maxSizeBytes = 500 * 1024 * 1024;
+    for (let i = 0; i < fileList.length; i++) {
+        if (fileList[i].size > maxSizeBytes) {
+            showToast(`File "${fileList[i].name}" exceeds 500 MB limit!`, 'error');
+            return;
+        }
+    }
+
     const formData = new FormData();
     formData.append('action', 'upload');
     formData.append('code', currentSiteCode);
@@ -1190,14 +1199,18 @@ async function handleSiteFilesUpload(fileList) {
     showToast(`Uploading ${fileList.length} file(s)...`, 'info');
 
     try {
-        const res = await fetch('/api/site.php', {
+        const res = await fetch(`/api/site.php?action=upload&code=${encodeURIComponent(currentSiteCode)}`, {
             method: 'POST',
             body: formData
         });
         const data = await res.json();
 
         if (data.success) {
-            showToast(`Uploaded ${data.uploaded_count} item(s) successfully!`, 'success');
+            if (data.errors && data.errors.length > 0) {
+                showToast(`Uploaded ${data.uploaded_count} item(s), but some failed: ${data.errors.join('; ')}`, 'warning');
+            } else {
+                showToast(`Uploaded ${data.uploaded_count} item(s) successfully!`, 'success');
+            }
             if (data.summary) {
                 currentSiteSummary = data.summary;
                 renderSiteOverview(data.summary);

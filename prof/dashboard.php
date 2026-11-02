@@ -559,7 +559,7 @@ $baseUrl = get_base_url();
                                     Drag &amp; Drop Files or .ZIP Archive
                                 </div>
                                 <p style="font-size: 0.83rem; color: var(--text-muted); margin-bottom: 1rem;">
-                                    Upload PHP, HTML, CSS, JS, images, audio, or a full website as a .ZIP (auto-extracted).
+                                    Upload PHP, HTML, CSS, JS, images, audio, video, or a full website as a .ZIP (auto-extracted, up to 500 MB).
                                 </p>
                                 <label class="btn btn-primary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
                                     <span>Select Files to Upload</span>

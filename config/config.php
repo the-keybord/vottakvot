@@ -35,6 +35,11 @@ define('MINIO_REGION', getenv('MINIO_REGION') ?: 'us-east-1');
 define('MAX_UPLOAD_SIZE_BYTES', 500 * 1024 * 1024); // 500 MB max file size
 define('HEAVY_FILE_THRESHOLD_BYTES', 100 * 1024 * 1024); // 100 MB heavy file warning threshold
 
+// Runtime limits for handling large uploads and ZIP archives (>10MB up to 500MB)
+@ini_set('memory_limit', '512M');
+@ini_set('max_execution_time', '600');
+@ini_set('max_input_time', '600');
+
 // App Settings
 define('APP_NAME', 'TikTak');
 define('APP_TAGLINE', 'Universal Student Gateway');

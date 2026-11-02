@@ -24,6 +24,17 @@ if (!$input) {
     $input = $_POST;
 }
 
+// Detect if POST exceeded server limits and was emptied by PHP
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    http_response_code(413);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => false,
+        'error' => 'Upload failed. The uploaded data (' . format_file_size((int)$_SERVER['CONTENT_LENGTH']) . ') exceeds the server post_max_size limit (currently ' . ini_get('post_max_size') . ').'
+    ]);
+    exit;
+}
+
 $action = $input['action'] ?? ($_GET['action'] ?? '');
 $code = strtoupper(trim($input['code'] ?? ($_GET['code'] ?? '')));
 
@@ -272,8 +283,11 @@ if ($action === 'delete_file') {
 // Action: upload (Upload files or ZIP archive)
 // ============================================================================
 if ($action === 'upload') {
+    @set_time_limit(600);
+    @ini_set('memory_limit', '512M');
+
     if (empty($_FILES['files'])) {
-        echo json_encode(['success' => false, 'error' => 'No files uploaded.']);
+        echo json_encode(['success' => false, 'error' => 'No files received. They may exceed the server upload limit.']);
         exit;
     }
 
@@ -294,21 +308,45 @@ if ($action === 'upload') {
     if (is_array($uploadedFiles['name'])) {
         $fileCount = count($uploadedFiles['name']);
         for ($i = 0; $i < $fileCount; $i++) {
-            if ($uploadedFiles['error'][$i] === UPLOAD_ERR_OK) {
+            $errCode = $uploadedFiles['error'][$i];
+            $fileName = $uploadedFiles['name'][$i];
+            if ($errCode === UPLOAD_ERR_OK) {
+                if ($uploadedFiles['size'][$i] > MAX_UPLOAD_SIZE_BYTES) {
+                    $errors[] = "File '{$fileName}' exceeds 500 MB limit (" . format_file_size($uploadedFiles['size'][$i]) . ").";
+                    continue;
+                }
                 $fileArray[] = [
-                    'name' => $uploadedFiles['name'][$i],
+                    'name' => $fileName,
                     'tmp_name' => $uploadedFiles['tmp_name'][$i],
                     'size' => $uploadedFiles['size'][$i],
                 ];
+            } else {
+                if ($errCode === UPLOAD_ERR_INI_SIZE || $errCode === UPLOAD_ERR_FORM_SIZE) {
+                    $errors[] = "File '{$fileName}' exceeds server maximum upload size (" . ini_get('upload_max_filesize') . ").";
+                } elseif ($errCode !== UPLOAD_ERR_NO_FILE) {
+                    $errors[] = "File '{$fileName}' failed to upload (error code: {$errCode}).";
+                }
             }
         }
     } else {
-        if ($uploadedFiles['error'] === UPLOAD_ERR_OK) {
-            $fileArray[] = [
-                'name' => $uploadedFiles['name'],
-                'tmp_name' => $uploadedFiles['tmp_name'],
-                'size' => $uploadedFiles['size'],
-            ];
+        $errCode = $uploadedFiles['error'];
+        $fileName = $uploadedFiles['name'];
+        if ($errCode === UPLOAD_ERR_OK) {
+            if ($uploadedFiles['size'] > MAX_UPLOAD_SIZE_BYTES) {
+                $errors[] = "File '{$fileName}' exceeds 500 MB limit (" . format_file_size($uploadedFiles['size']) . ").";
+            } else {
+                $fileArray[] = [
+                    'name' => $fileName,
+                    'tmp_name' => $uploadedFiles['tmp_name'],
+                    'size' => $uploadedFiles['size'],
+                ];
+            }
+        } else {
+            if ($errCode === UPLOAD_ERR_INI_SIZE || $errCode === UPLOAD_ERR_FORM_SIZE) {
+                $errors[] = "File '{$fileName}' exceeds server maximum upload size (" . ini_get('upload_max_filesize') . ").";
+            } elseif ($errCode !== UPLOAD_ERR_NO_FILE) {
+                $errors[] = "File '{$fileName}' failed to upload (error code: {$errCode}).";
+            }
         }
     }
 
@@ -369,6 +407,17 @@ if ($action === 'upload') {
         } else {
             $errors[] = "Invalid filename {$origName}";
         }
+    }
+
+    if ($countSaved === 0 && !empty($errors)) {
+        echo json_encode([
+            'success' => false,
+            'error' => implode('; ', $errors),
+            'errors' => $errors,
+            'uploaded_count' => 0,
+            'summary' => get_site_summary($code)
+        ]);
+        exit;
     }
 
     echo json_encode([
