@@ -11,12 +11,13 @@ if (!defined('TIKTAK_ROOT')) {
 
 // Centralized MySQL Database Configuration
 // All instances connect directly to the centralized database on 85.120.144.58
-define('DB_HOST', getenv('DB_HOST') ?: '85.120.144.58');
-define('DB_PORT', getenv('DB_PORT') ?: '3306');
+define('DB_HOST', getenv('DB_HOST') ?: 'db.zece.info');
+define('DB_PORT', getenv('DB_PORT') ?: '443');
 define('DB_NAME', getenv('DB_NAME') ?: 'newuser_tiktak');
 define('DB_USER', getenv('DB_USER') ?: 'newuser');
 define('DB_PASS', getenv('DB_PASS') ?: 'secure_password');
 define('DB_CHARSET', 'utf8mb4');
+define('DB_USE_SSL', true);
 
 // Disable silent SQLite fallback to ensure all deployments use the same centralized database
 define('DB_ALLOW_SQLITE_FALLBACK', false);

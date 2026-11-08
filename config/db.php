@@ -28,6 +28,13 @@ function get_db_connection() {
             PDO::ATTR_EMULATE_PREPARES   => false,
             PDO::ATTR_TIMEOUT            => 5,
         ];
+
+        if (defined('DB_USE_SSL') && DB_USE_SSL) {
+            // Note: On some Linux/PHP builds, passing an empty string or valid system CA path works best
+            $caPath = '/etc/ssl/certs/ca-certificates.crt';
+            $options[PDO::MYSQL_ATTR_SSL_CA] = file_exists($caPath) ? $caPath : '';
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
         
         try {
             $pdo = new PDO($dsn, $user, $pass, $options);
