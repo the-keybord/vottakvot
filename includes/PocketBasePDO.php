@@ -65,6 +65,10 @@ class PocketBaseStatement {
         return $this->pfx . $name;
     }
 
+    private function q(mixed $val): string {
+        return "'" . addslashes((string)$val) . "'";
+    }
+
     public function execute(array $params = []): bool {
         $this->cursor = 0;
         $this->results = [];
@@ -77,7 +81,7 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/SELECT .* FROM resources WHERE code = \? LIMIT 1/i', $sql)) {
             $code = $params[0] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = "' . addslashes($code) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = ' . $this->q($code));
             if ($rec) {
                 $this->results = [$this->normalizeResourceRecord($rec)];
                 $this->affectedRows = 1;
@@ -90,7 +94,7 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/SELECT id FROM resources WHERE code = \? LIMIT 1/i', $sql)) {
             $code = $params[0] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = "' . addslashes($code) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = ' . $this->q($code));
             if ($rec) {
                 $this->results = [['id' => $rec['id']]];
                 $this->affectedRows = 1;
@@ -105,14 +109,14 @@ class PocketBaseStatement {
             $rawUserId = $params[0] ?? '';
             $userId = (string)$rawUserId;
             if ($userId === '1' || $userId === '0' || empty($userId)) {
-                $profRec = $this->pb->getFirstListItem($this->col('users'), 'email = "prof@tiktak.md"');
+                $profRec = $this->pb->getFirstListItem($this->col('users'), "email = 'prof@tiktak.md'");
                 if ($profRec && !empty($profRec['id'])) {
                     $userId = $profRec['id'];
                 } else {
                     $userId = 'tyoun07mmiuck1b';
                 }
             }
-            $filter = 'user_id = "' . addslashes($userId) . '"';
+            $filter = 'user_id = ' . $this->q($userId);
             $records = $this->pb->getFullList($this->col('resources'), [
                 'filter' => $filter,
                 'sort' => '-created',
@@ -138,7 +142,7 @@ class PocketBaseStatement {
         if (preg_match('/SELECT .* FROM resources WHERE id = \? AND user_id = \?/i', $sql)) {
             $id = $params[0] ?? '';
             $userId = $params[1] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = "' . addslashes($id) . '" && user_id = "' . addslashes($userId) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = ' . $this->q($id) . ' && user_id = ' . $this->q($userId));
             if ($rec) {
                 $this->results = [$this->normalizeResourceRecord($rec)];
                 $this->affectedRows = 1;
@@ -152,7 +156,7 @@ class PocketBaseStatement {
         if (preg_match('/SELECT .* FROM resources WHERE code = \? AND user_id = \? AND type = \'hosting\'/i', $sql)) {
             $code = $params[0] ?? '';
             $userId = $params[1] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = "' . addslashes($code) . '" && user_id = "' . addslashes($userId) . '" && type = "hosting"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code = ' . $this->q($code) . ' && user_id = ' . $this->q($userId) . ' && type = \'hosting\'');
             if ($rec) {
                 $this->results = [$this->normalizeResourceRecord($rec)];
                 $this->affectedRows = 1;
@@ -194,7 +198,7 @@ class PocketBaseStatement {
             $id = $params[3] ?? '';
             $userId = $params[4] ?? '';
 
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = "' . addslashes($id) . '" && user_id = "' . addslashes($userId) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = ' . $this->q($id) . ' && user_id = ' . $this->q($userId));
             if ($rec) {
                 $this->pb->update($this->col('resources'), $rec['id'], [
                     'title' => $title,
@@ -214,7 +218,7 @@ class PocketBaseStatement {
             $id = $params[1] ?? '';
             $userId = $params[2] ?? '';
 
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = "' . addslashes($id) . '" && user_id = "' . addslashes($userId) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = ' . $this->q($id) . ' && user_id = ' . $this->q($userId));
             if ($rec) {
                 $this->pb->update($this->col('resources'), $rec['id'], [
                     'expires_at' => $expiresAt ? date('Y-m-d H:i:s.000\Z', strtotime($expiresAt)) : null,
@@ -254,7 +258,7 @@ class PocketBaseStatement {
         if (preg_match('/DELETE FROM resources WHERE id = \? AND user_id = \?/i', $sql)) {
             $id = $params[0] ?? '';
             $userId = $params[1] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = "' . addslashes($id) . '" && user_id = "' . addslashes($userId) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'id = ' . $this->q($id) . ' && user_id = ' . $this->q($userId));
             if ($rec) {
                 $this->pb->delete($this->col('resources'), $rec['id']);
                 $this->affectedRows = 1;
@@ -267,9 +271,9 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/SELECT .* FROM users WHERE username = \? LIMIT 1/i', $sql)) {
             $username = $params[0] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('users'), 'email = "' . addslashes($username) . '@tiktak.md" || email = "' . addslashes($username) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('users'), 'email = ' . $this->q($username . '@tiktak.md') . ' || email = ' . $this->q($username));
             if (!$rec) {
-                $rec = $this->pb->getFirstListItem($this->col('users'), 'id = "' . addslashes($username) . '"');
+                $rec = $this->pb->getFirstListItem($this->col('users'), 'id = ' . $this->q($username));
             }
             if ($rec) {
                 $this->results = [$this->normalizeUserRecord($rec)];
@@ -283,9 +287,9 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/SELECT id FROM users WHERE username = \? LIMIT 1/i', $sql)) {
             $username = $params[0] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('users'), 'email = "' . addslashes($username) . '@tiktak.md" || email = "' . addslashes($username) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('users'), 'email = ' . $this->q($username . '@tiktak.md') . ' || email = ' . $this->q($username));
             if (!$rec) {
-                $rec = $this->pb->getFirstListItem($this->col('users'), 'id = "' . addslashes($username) . '"');
+                $rec = $this->pb->getFirstListItem($this->col('users'), 'id = ' . $this->q($username));
             }
             if ($rec) {
                 $this->results = [['id' => $rec['id']]];
@@ -332,7 +336,7 @@ class PocketBaseStatement {
         if (preg_match('/SELECT .* FROM resource_files WHERE resource_id = \?/i', $sql)) {
             $resourceId = $params[0] ?? '';
             $records = $this->pb->getFullList($this->col('resource_files'), [
-                'filter' => 'resource_id = "' . addslashes($resourceId) . '"',
+                'filter' => 'resource_id = ' . $this->q($resourceId),
                 'sort' => '-upload_date,-created',
             ]);
             $this->results = array_map([$this, 'normalizeFileRecord'], $records);
@@ -422,7 +426,7 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/DELETE FROM resource_files WHERE resource_id = \?/i', $sql)) {
             $resourceId = $params[0] ?? '';
-            $files = $this->pb->getFullList($this->col('resource_files'), ['filter' => 'resource_id = "' . addslashes($resourceId) . '"']);
+            $files = $this->pb->getFullList($this->col('resource_files'), ['filter' => 'resource_id = ' . $this->q($resourceId)]);
             foreach ($files as $f) {
                 $this->pb->delete($this->col('resource_files'), $f['id']);
             }
@@ -464,7 +468,7 @@ class PocketBaseStatement {
         if (preg_match('/SELECT COUNT\(\*\) as count FROM resource_files WHERE resource_id = \? AND stored_filename = \?/i', $sql)) {
             $resourceId = $params[0] ?? '';
             $filename = $params[1] ?? '';
-            $rec = $this->pb->getFirstListItem($this->col('resource_files'), 'resource_id = "' . addslashes($resourceId) . '" && stored_filename = "' . addslashes($filename) . '"');
+            $rec = $this->pb->getFirstListItem($this->col('resource_files'), 'resource_id = ' . $this->q($resourceId) . ' && stored_filename = ' . $this->q($filename));
             $this->results = [['count' => $rec ? 1 : 0]];
             $this->affectedRows = 1;
             return true;
@@ -477,7 +481,7 @@ class PocketBaseStatement {
             $heavyThreshold = (int)($params[0] ?? 104857600);
             $resourceId = $params[1] ?? '';
 
-            $files = $this->pb->getFullList($this->col('resource_files'), ['filter' => 'resource_id = "' . addslashes($resourceId) . '"']);
+            $files = $this->pb->getFullList($this->col('resource_files'), ['filter' => 'resource_id = ' . $this->q($resourceId)]);
             $totalFiles = count($files);
             $totalSize = 0;
             $heavyCount = 0;

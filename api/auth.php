@@ -68,7 +68,7 @@ if ($action === 'create_teacher') {
         $pfx = defined('POCKETBASE_TABLE_PREFIX') ? POCKETBASE_TABLE_PREFIX : 'tiktak_';
         $email = strpos($username, '@') !== false ? $username : $username . '@tiktak.md';
 
-        $existing = $pb->getFirstListItem($pfx . 'users', 'email = "' . addslashes($email) . '"');
+        $existing = $pb->getFirstListItem($pfx . 'users', "email = '" . addslashes($email) . "'");
         if ($existing) {
             echo json_encode(['success' => false, 'error' => "The username '{$username}' is already taken."]);
             exit;
@@ -149,7 +149,7 @@ if (defined('DB_DRIVER') && DB_DRIVER === 'pocketbase') {
     if (empty($authRes['token'])) {
         $superAuth = $pb->authAsSuperuser($username, $password);
         if (!empty($superAuth['token'])) {
-            $profRec = $pb->getFirstListItem($pfx . 'users', 'email = "prof@tiktak.md"');
+            $profRec = $pb->getFirstListItem($pfx . 'users', "email = 'prof@tiktak.md'");
             $userSession = [
                 'id' => $profRec['id'] ?? 'tyoun07mmiuck1b',
                 'username' => 'prof',

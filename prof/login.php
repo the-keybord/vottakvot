@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($authRes['token'])) {
                 $superAuth = $pb->authAsSuperuser($username, $password);
                 if (!empty($superAuth['token'])) {
-                    $profRec = $pb->getFirstListItem($pfx . 'users', 'email = "prof@tiktak.md"');
+                    $profRec = $pb->getFirstListItem($pfx . 'users', "email = 'prof@tiktak.md'");
                     $userSession = [
                         'id' => $profRec['id'] ?? 'tyoun07mmiuck1b',
                         'username' => 'prof',

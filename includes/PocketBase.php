@@ -110,6 +110,11 @@ class PocketBase {
     public function getList(string $collection, int $page = 1, int $perPage = 30, array $params = []): array {
         $params['page'] = $page;
         $params['perPage'] = $perPage;
+        if (!empty($params['filter'])) {
+            // PocketBase requires string literals to be enclosed in single quotes ('...').
+            // Convert double-quoted values to single-quoted literals: e.g. user_id = "abc" -> user_id = 'abc'
+            $params['filter'] = preg_replace('/"([^"]*)"/', "'$1'", $params['filter']);
+        }
         $query = http_build_query($params);
         return $this->request('GET', "/api/collections/{$collection}/records?" . $query);
     }
@@ -137,7 +142,7 @@ class PocketBase {
      * Get first record matching filter
      */
     public function getFirstListItem(string $collection, string $filter, array $params = []): ?array {
-        $params['filter'] = $filter;
+        $params['filter'] = preg_replace('/"([^"]*)"/', "'$1'", $filter);
         $params['page'] = 1;
         $params['perPage'] = 1;
         $res = $this->getList($collection, 1, 1, $params);
