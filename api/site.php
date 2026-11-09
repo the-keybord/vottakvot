@@ -48,7 +48,6 @@ if (!$resource) {
 
 // Ensure site directory exists
 $siteDir = ensure_site_dir($code);
-sync_site_file_if_missing($code, $resource['content_text'] ?? null, $resource['title'] ?? '');
 
 // ============================================================================
 // Action: download_zip (Direct file download)
@@ -259,6 +258,16 @@ if ($action === 'delete_file') {
         @rmdir($targetPath);
     } else {
         @unlink($targetPath);
+    }
+
+    // If main index file was deleted, also clear content_text in database so it is not resurrected
+    $normalizedFile = str_replace('\\', '/', ltrim($filename, '/'));
+    if ($normalizedFile === 'index.php') {
+        try {
+            $pdo->prepare("UPDATE resources SET content_text = '', updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$resource['id']]);
+        } catch (\Throwable $e) {
+            // Ignore if DB update fails
+        }
     }
 
     echo json_encode([

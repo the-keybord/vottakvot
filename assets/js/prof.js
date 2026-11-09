@@ -978,15 +978,26 @@ async function loadSiteData(code) {
             renderSiteOverview(data.summary);
             
             // Choose file to open: index.php, index.html, or first file
-            let fileToOpen = 'index.php';
+            let fileToOpen = null;
             if (data.summary.has_index && data.summary.main_file) {
                 fileToOpen = data.summary.main_file;
-            } else if (data.summary.files.length > 0) {
+            } else if (data.summary.files && data.summary.files.length > 0) {
                 const firstEditable = data.summary.files.find(f => !f.is_dir && f.is_editable);
                 if (firstEditable) fileToOpen = firstEditable.path;
             }
 
-            await loadSiteFile(fileToOpen);
+            if (fileToOpen) {
+                await loadSiteFile(fileToOpen);
+            } else {
+                currentSiteFile = '';
+                const activeNameElem = document.getElementById('siteActiveFileName');
+                if (activeNameElem) activeNameElem.innerText = 'No files';
+                const textarea = document.getElementById('siteCodeTextarea');
+                if (textarea) {
+                    textarea.value = '// No files in this site. Click "+ File" to create a new file or upload a ZIP.';
+                    textarea.disabled = true;
+                }
+            }
         } else {
             showToast(data.error || 'Failed to load site information', 'error');
         }
