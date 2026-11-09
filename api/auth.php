@@ -53,8 +53,8 @@ if ($action === 'create_teacher') {
         exit;
     }
 
-    if (strlen($password) < 4) {
-        echo json_encode(['success' => false, 'error' => 'Password must be at least 4 characters long.']);
+    if (strlen($password) < 8) {
+        echo json_encode(['success' => false, 'error' => 'Password must be at least 8 characters long.']);
         exit;
     }
 
@@ -62,7 +62,40 @@ if ($action === 'create_teacher') {
         $name = 'Professor ' . ucfirst($username);
     }
 
-    // Check if username already exists
+    if (defined('DB_DRIVER') && DB_DRIVER === 'pocketbase') {
+        require_once __DIR__ . '/../includes/PocketBase.php';
+        $pb = PocketBase::getInstance();
+        $pfx = defined('POCKETBASE_TABLE_PREFIX') ? POCKETBASE_TABLE_PREFIX : 'tiktak_';
+        $email = strpos($username, '@') !== false ? $username : $username . '@tiktak.md';
+
+        $existing = $pb->getFirstListItem($pfx . 'users', 'email = "' . addslashes($email) . '"');
+        if ($existing) {
+            echo json_encode(['success' => false, 'error' => "The username '{$username}' is already taken."]);
+            exit;
+        }
+
+        $created = $pb->create($pfx . 'users', [
+            'username' => $username,
+            'email' => $email,
+            'password' => $password,
+            'passwordConfirm' => $password,
+            'name' => $name,
+        ]);
+
+        if (!empty($created['id'])) {
+            echo json_encode([
+                'success' => true,
+                'message' => "Teacher account '{$username}' created successfully!"
+            ]);
+            exit;
+        } else {
+            $err = $created['message'] ?? 'Failed to create user in PocketBase';
+            echo json_encode(['success' => false, 'error' => $err]);
+            exit;
+        }
+    }
+
+    // Legacy MySQL fallback
     $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
     $stmt->execute([$username]);
     if ($stmt->fetch()) {
@@ -96,25 +129,74 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
-$stmt->execute([$username]);
-$user = $stmt->fetch();
+$authenticated = false;
+$userSession = [];
 
-if ($user && password_verify($password, $user['password_hash'])) {
-    $_SESSION['tiktak_user_id'] = $user['id'];
-    $_SESSION['tiktak_username'] = $user['username'];
-    $_SESSION['tiktak_name'] = $user['name'];
+if (defined('DB_DRIVER') && DB_DRIVER === 'pocketbase') {
+    require_once __DIR__ . '/../includes/PocketBase.php';
+    $pb = PocketBase::getInstance();
+    $pfx = defined('POCKETBASE_TABLE_PREFIX') ? POCKETBASE_TABLE_PREFIX : 'tiktak_';
+
+    // 1. Try auth as tiktak_users with input as identity
+    $authRes = $pb->authWithPassword($pfx . 'users', $username, $password);
+
+    // 2. If no '@' in username, also try username@tiktak.md
+    if (empty($authRes['token']) && strpos($username, '@') === false) {
+        $authRes = $pb->authWithPassword($pfx . 'users', $username . '@tiktak.md', $password);
+    }
+
+    // 3. Fallback: Check if superuser credentials were used
+    if (empty($authRes['token'])) {
+        $superAuth = $pb->authAsSuperuser($username, $password);
+        if (!empty($superAuth['token'])) {
+            $profRec = $pb->getFirstListItem($pfx . 'users', 'email = "prof@tiktak.md"');
+            $userSession = [
+                'id' => $profRec['id'] ?? 'tyoun07mmiuck1b',
+                'username' => 'prof',
+                'name' => 'Professor',
+            ];
+            $authenticated = true;
+        }
+    } else {
+        $rec = $authRes['record'] ?? [];
+        $email = $rec['email'] ?? '';
+        $uname = !empty($rec['username']) ? $rec['username'] : str_replace('@tiktak.md', '', $email);
+        $userSession = [
+            'id' => $rec['id'],
+            'username' => $uname,
+            'name' => $rec['name'] ?? 'Professor',
+        ];
+        $authenticated = true;
+    }
+} else {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+    if ($user && password_verify($password, $user['password_hash'])) {
+        $userSession = [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'name' => $user['name']
+        ];
+        $authenticated = true;
+    }
+}
+
+if ($authenticated && !empty($userSession)) {
+    $_SESSION['tiktak_user_id'] = $userSession['id'];
+    $_SESSION['tiktak_username'] = $userSession['username'];
+    $_SESSION['tiktak_name'] = $userSession['name'];
 
     echo json_encode([
         'success' => true,
         'user' => [
-            'id' => $user['id'],
-            'username' => $user['username'],
-            'name' => $user['name']
+            'id' => $userSession['id'],
+            'username' => $userSession['username'],
+            'name' => $userSession['name']
         ],
         'redirect' => $redirect
     ]);
     exit;
 }
 
-echo json_encode(['success' => false, 'error' => 'Invalid username or password']);
+echo json_encode(['success' => false, 'error' => 'Invalid email/username or password']);

@@ -27,18 +27,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password'] ?? '');
 
     if (!empty($username) && !empty($password)) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
+        $authenticated = false;
+        $userSession = [];
 
-        if ($user && password_verify($password, $user['password_hash'])) {
-            $_SESSION['tiktak_user_id'] = $user['id'];
-            $_SESSION['tiktak_username'] = $user['username'];
-            $_SESSION['tiktak_name'] = $user['name'];
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pocketbase') {
+            require_once __DIR__ . '/../includes/PocketBase.php';
+            $pb = PocketBase::getInstance();
+            $pfx = defined('POCKETBASE_TABLE_PREFIX') ? POCKETBASE_TABLE_PREFIX : 'tiktak_';
+
+            // 1. Try auth as tiktak_users with input as identity
+            $authRes = $pb->authWithPassword($pfx . 'users', $username, $password);
+
+            // 2. If no '@' in username, also try username@tiktak.md
+            if (empty($authRes['token']) && strpos($username, '@') === false) {
+                $authRes = $pb->authWithPassword($pfx . 'users', $username . '@tiktak.md', $password);
+            }
+
+            // 3. Fallback: Check if superuser credentials were used
+            if (empty($authRes['token'])) {
+                $superAuth = $pb->authAsSuperuser($username, $password);
+                if (!empty($superAuth['token'])) {
+                    $profRec = $pb->getFirstListItem($pfx . 'users', 'email = "prof@tiktak.md"');
+                    $userSession = [
+                        'id' => $profRec['id'] ?? 'tyoun07mmiuck1b',
+                        'username' => 'prof',
+                        'name' => 'Professor',
+                    ];
+                    $authenticated = true;
+                }
+            } else {
+                $rec = $authRes['record'] ?? [];
+                $email = $rec['email'] ?? '';
+                $uname = !empty($rec['username']) ? $rec['username'] : str_replace('@tiktak.md', '', $email);
+                $userSession = [
+                    'id' => $rec['id'],
+                    'username' => $uname,
+                    'name' => $rec['name'] ?? 'Professor',
+                ];
+                $authenticated = true;
+            }
+        } else {
+            // Legacy MySQL login
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+            if ($user && password_verify($password, $user['password_hash'])) {
+                $userSession = [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'name' => $user['name'],
+                ];
+                $authenticated = true;
+            }
+        }
+
+        if ($authenticated && !empty($userSession)) {
+            $_SESSION['tiktak_user_id'] = $userSession['id'];
+            $_SESSION['tiktak_username'] = $userSession['username'];
+            $_SESSION['tiktak_name'] = $userSession['name'];
             header("Location: " . $redirect);
             exit;
         } else {
-            $error = 'Invalid username or password.';
+            $error = 'Invalid email/username or password.';
         }
     } else {
         $error = 'Please fill in all fields.';
@@ -88,8 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form action="/prof/login.php" method="POST">
                 <div class="form-group">
-                    <label class="form-label" for="username">Username / ID</label>
-                    <input type="text" id="username" name="username" class="form-control" placeholder="e.g. prof" required autofocus>
+                    <label class="form-label" for="username">Username or Email</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="e.g. prof or your email" required autofocus>
                 </div>
 
                 <div class="form-group">
