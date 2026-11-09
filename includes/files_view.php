@@ -10,7 +10,7 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $isProf = is_logged_in();
 $expiryStatus = format_expiry_status($resource['expires_at'] ?? null);
-$stats = get_resource_files_summary($pdo, (int)$resource['id']);
+$stats = get_resource_files_summary($pdo, $resource['id']);
 $baseUrl = get_base_url();
 $accessUrl = $baseUrl . '/code=' . $resource['code'];
 ?>

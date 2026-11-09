@@ -149,7 +149,7 @@ $baseUrl = get_base_url();
                                             $preview .= " • " . mb_strimwidth($linksData[0]['title'], 0, 35, '...');
                                         }
                                     } else {
-                                        $fStats = get_resource_files_summary($pdo, (int)$r['id']);
+                                        $fStats = get_resource_files_summary($pdo, $r['id']);
                                         $preview = "MinIO folder: {$r['code']}/ • {$fStats['total_files']} files ({$fStats['total_size_formatted']})";
                                     }
                                 ?>
@@ -194,7 +194,7 @@ $baseUrl = get_base_url();
                                                 <?= htmlspecialchars($expInfo['label']) ?>
                                             </span>
                                             <?php if ($expInfo['is_expired']): ?>
-                                                <button class="btn-extend-expiry" onclick="extendExpiry(<?= $r['id'] ?>, 2)" title="Extend code validity by +2 hours">
+                                                <button class="btn-extend-expiry" onclick="extendExpiry('<?= $r['id'] ?>', 2)" title="Extend code validity by +2 hours">
                                                     <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                     <span>+2 Hours</span>
                                                 </button>
@@ -218,7 +218,7 @@ $baseUrl = get_base_url();
                                             <button class="btn btn-secondary btn-sm" onclick='openEditModal(<?= json_encode($r, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' title="Edit Material">
                                                 Edit
                                             </button>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteResource(<?= $r['id'] ?>, '<?= $r['code'] ?>')" title="Delete Code">
+                                            <button class="btn btn-danger btn-sm" onclick="deleteResource('<?= $r['id'] ?>', '<?= $r['code'] ?>')" title="Delete Code">
                                                 ✕
                                             </button>
                                         </div>

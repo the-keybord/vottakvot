@@ -22,7 +22,7 @@ function generate_random_code(int $length = 6): string {
 /**
  * Generate a unique 6-letter code that does not yet exist in the database
  */
-function generate_unique_code(PDO $pdo, int $length = 6): string {
+function generate_unique_code($pdo, int $length = 6): string {
     $attempts = 0;
     while ($attempts < 50) {
         $code = generate_random_code($length);
@@ -140,7 +140,7 @@ function get_base_url(): string {
 /**
  * Record a visit and increment count
  */
-function record_resource_visit(PDO $pdo, int $resourceId) {
+function record_resource_visit($pdo, $resourceId) {
     try {
         $update = $pdo->prepare("UPDATE resources SET visits_count = visits_count + 1 WHERE id = ?");
         $update->execute([$resourceId]);
@@ -178,7 +178,7 @@ function is_heavy_file(int $bytes): bool {
 /**
  * Deduplicate filename by adding zero-padded suffixes (_01, _02, ...)
  */
-function generate_suffixed_filename(PDO $pdo, int $resourceId, string $originalFilename): string {
+function generate_suffixed_filename($pdo, $resourceId, string $originalFilename): string {
     $cleanFilename = preg_replace('/[^\w\.\-\(\)\s]/u', '_', $originalFilename);
     $cleanFilename = trim($cleanFilename);
     if (empty($cleanFilename)) {
@@ -270,7 +270,7 @@ function get_file_type_meta(string $filename, ?string $mimeType = null): array {
 /**
  * Get file statistics for a resource
  */
-function get_resource_files_summary(PDO $pdo, int $resourceId): array {
+function get_resource_files_summary($pdo, $resourceId): array {
     $stmt = $pdo->prepare("SELECT COUNT(*) as total_files, COALESCE(SUM(file_size), 0) as total_size, SUM(CASE WHEN file_size >= ? THEN 1 ELSE 0 END) as heavy_count FROM resource_files WHERE resource_id = ?");
     $stmt->execute([HEAVY_FILE_THRESHOLD_BYTES, $resourceId]);
     $res = $stmt->fetch();

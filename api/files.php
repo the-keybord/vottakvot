@@ -90,7 +90,7 @@ if ($action === 'list') {
         $isPinned = !empty($f['is_pinned']);
 
         $fileItem = [
-            'id' => (int)$f['id'],
+            'id' => $f['id'],
             'filename' => $f['stored_filename'],
             'original_filename' => $f['original_filename'],
             'size' => (int)$f['file_size'],
@@ -195,7 +195,7 @@ if ($action === 'upload') {
     $originalName = basename($uploadedFile['name']);
     
     // Auto-suffixing logic: adds _01, _02 etc if file with same name exists
-    $storedName = generate_suffixed_filename($pdo, (int)$resource['id'], $originalName);
+    $storedName = generate_suffixed_filename($pdo, $resource['id'], $originalName);
 
     // MinIO key: "{code}/{storedName}"
     $s3Key = "{$code}/{$storedName}";
@@ -242,7 +242,7 @@ if ($action === 'upload') {
     send_json([
         'success' => true,
         'file' => [
-            'id' => (int)$fileId,
+            'id' => $fileId,
             'filename' => $storedName,
             'original_filename' => $originalName,
             'size' => $fileSize,
@@ -260,8 +260,8 @@ if ($action === 'upload') {
 // 3. DOWNLOAD FILE (Streaming directly from MinIO/S3)
 // -------------------------------------------------------------
 if ($action === 'download') {
-    $fileId = (int)($_GET['file_id'] ?? 0);
-    if ($fileId <= 0) {
+    $fileId = trim((string)($_GET['file_id'] ?? ''));
+    if (empty($fileId)) {
         die("Invalid file request.");
     }
 
@@ -308,9 +308,9 @@ if ($action === 'delete') {
         ], 403);
     }
 
-    $fileId = (int)($inputData['file_id'] ?? ($_GET['file_id'] ?? 0));
+    $fileId = trim((string)($inputData['file_id'] ?? ($_GET['file_id'] ?? '')));
 
-    if ($fileId <= 0) {
+    if (empty($fileId)) {
         send_json(['success' => false, 'error' => 'Invalid file ID.'], 400);
     }
 
@@ -351,9 +351,9 @@ if ($action === 'toggle_pin') {
         ], 403);
     }
 
-    $fileId = (int)($inputData['file_id'] ?? ($_GET['file_id'] ?? 0));
+    $fileId = trim((string)($inputData['file_id'] ?? ($_GET['file_id'] ?? '')));
 
-    if ($fileId <= 0) {
+    if (empty($fileId)) {
         send_json(['success' => false, 'error' => 'Invalid file ID.'], 400);
     }
 

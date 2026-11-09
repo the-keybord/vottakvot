@@ -176,13 +176,13 @@ if ($action === 'update') {
         exit;
     }
 
-    $userId = $_SESSION['tiktak_user_id'] ?? 0;
-    $id = (int)($input['id'] ?? 0);
+    $userId = $_SESSION['tiktak_user_id'] ?? '';
+    $id = trim((string)($input['id'] ?? ''));
     $title = trim($input['title'] ?? '');
     $contentLink = trim($input['content_link'] ?? '');
     $contentText = trim($input['content_text'] ?? '');
 
-    if ($id <= 0) {
+    if (empty($id)) {
         echo json_encode(['success' => false, 'error' => 'Invalid ID']);
         exit;
     }
@@ -230,9 +230,9 @@ if ($action === 'delete') {
         exit;
     }
 
-    $userId = $_SESSION['tiktak_user_id'] ?? 0;
-    $id = (int)($input['id'] ?? 0);
-    if ($id <= 0) {
+    $userId = $_SESSION['tiktak_user_id'] ?? '';
+    $id = trim((string)($input['id'] ?? ''));
+    if (empty($id)) {
         echo json_encode(['success' => false, 'error' => 'Invalid ID']);
         exit;
     }
@@ -274,10 +274,15 @@ if ($action === 'extend') {
         exit;
     }
 
-    $userId = $_SESSION['tiktak_user_id'] ?? 0;
-    $id = (int)($input['id'] ?? 0);
+    $userId = $_SESSION['tiktak_user_id'] ?? '';
+    $id = trim((string)($input['id'] ?? ''));
     $hours = (int)($input['hours'] ?? 2);
     if ($hours <= 0) $hours = 2;
+
+    if (empty($id)) {
+        echo json_encode(['success' => false, 'error' => 'Invalid ID']);
+        exit;
+    }
 
     $stmt = $pdo->prepare("SELECT * FROM resources WHERE id = ? AND user_id = ? LIMIT 1");
     $stmt->execute([$id, $userId]);
