@@ -2609,6 +2609,212 @@ textarea.form-control {
   }
 }
 
+/* ==========================================================================
+   Dashboard Filter & Sorting Controls
+   ========================================================================== */
+
+.dashboard-controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.25rem;
+}
+
+.type-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.filter-chip-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.filter-chip-btn.active {
+  color: #ffffff;
+  background: rgba(99, 102, 241, 0.22);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.25);
+  font-weight: 600;
+}
+
+.filter-chip-btn .chip-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.filter-chip-btn.active .chip-count {
+  background: var(--accent-primary);
+  color: #ffffff;
+}
+
+.sort-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.sort-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sort-buttons {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.sort-btn {
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sort-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sort-btn.active {
+  background: var(--accent-primary);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+}
+
+.results-badge {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.results-badge #visibleCount {
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .dashboard-controls-bar {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .filter-chip-btn {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="light"] .filter-chip-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+[data-theme="light"] .filter-chip-btn.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .sort-buttons {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .sort-btn {
+  color: #64748b;
+}
+
+[data-theme="light"] .sort-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .sort-btn.active {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+[data-theme="light"] .results-badge {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="light"] .results-badge #visibleCount {
+  color: #0284c7;
+}
+
+@media (max-width: 900px) {
+  .dashboard-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sort-controls-group {
+    margin-left: 0;
+    justify-content: space-between;
+  }
+  .sort-buttons {
+    overflow-x: auto;
+  }
+}
+
+
 
 
 

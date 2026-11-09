@@ -108,68 +108,117 @@ $baseUrl = get_base_url();
                 </div>
             </div>
 
-            <!-- Diagnostic / Debug Monitor Banner -->
+            <!-- Diagnostic / Database Connection Monitor (Collapsible) -->
             <?php 
                 $dbg = ($pdo instanceof PocketBasePDO) ? $pdo->lastQueryDebug : null;
+                $typeCounts = [
+                    'all' => count($resources),
+                    'redirect' => 0,
+                    'text' => 0,
+                    'hosting' => 0,
+                    'links' => 0,
+                    'files' => 0,
+                ];
+                foreach ($resources as $r) {
+                    $t = $r['type'] ?? 'redirect';
+                    if (isset($typeCounts[$t])) {
+                        $typeCounts[$t]++;
+                    } else {
+                        $typeCounts['redirect']++;
+                    }
+                }
             ?>
-            <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid <?= count($resources) > 0 ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.5)' ?>; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; backdrop-filter: blur(10px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem;">
+            <details class="dashboard-db-status" style="margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.6rem 1rem;">
+                <summary style="font-size: 0.82rem; color: var(--text-dim); cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.1rem;">🔍</span>
-                        <strong style="color: var(--accent-cyan); font-size: 0.95rem; font-family: var(--font-heading);">Database &amp; User ID Monitor</strong>
-                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.75rem;">Driver: <?= DB_DRIVER ?></span>
+                        <span style="color: #10b981; font-size: 0.75rem;">●</span>
+                        <strong style="color: var(--text-main); font-weight: 600;">PocketBase Live</strong>
+                        <span style="color: var(--text-muted); font-size: 0.78rem;">(<?= count($resources) ?> <?= count($resources) === 1 ? 'resource' : 'resources' ?> loaded)</span>
                     </div>
-                    <div style="font-size: 0.82rem; color: var(--text-dim);">
-                        PocketBase: <code style="color: var(--accent-cyan);"><?= defined('POCKETBASE_URL') ? POCKETBASE_URL : 'N/A' ?></code>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; font-size: 0.86rem;">
-                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
-                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Current User ID in Session</div>
-                        <code style="font-size: 0.95rem; font-weight: 700; color: #38bdf8;"><?= htmlspecialchars((string)($user['id'] ?? '')) ?></code>
-                    </div>
-                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
-                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Logged In As</div>
-                        <div style="font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($user['username'] ?? '') ?> (<?= htmlspecialchars($user['name'] ?? '') ?>)</div>
-                    </div>
-                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
-                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Resources Returned</div>
-                        <div style="font-weight: 700; font-size: 1.1rem; color: <?= count($resources) > 0 ? '#10b981' : '#f43f5e' ?>;">
-                            <?= count($resources) ?> <?= count($resources) === 1 ? 'item' : 'items' ?>
+                    <span style="font-size: 0.75rem; color: var(--accent-cyan); display: inline-flex; align-items: center; gap: 0.25rem;">
+                        Database Diagnostics ▾
+                    </span>
+                </summary>
+                <div style="margin-top: 0.75rem; padding-top: 0.6rem; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.8rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem; margin-bottom: 0.6rem;">
+                        <div style="background: rgba(0, 0, 0, 0.25); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                            <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">User ID</div>
+                            <code style="color: #38bdf8; font-weight: 600;"><?= htmlspecialchars((string)($user['id'] ?? '')) ?></code>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.25); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                            <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">Logged In As</div>
+                            <div style="color: var(--text-main); font-weight: 600;"><?= htmlspecialchars($user['username'] ?? '') ?> (<?= htmlspecialchars($user['name'] ?? '') ?>)</div>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.25); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                            <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">Collection</div>
+                            <code style="color: var(--accent-cyan);"><?= htmlspecialchars($dbg['collection'] ?? 'tiktak_resources') ?></code>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.25); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                            <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase;">Status</div>
+                            <span style="color: #10b981; font-weight: 600;">HTTP <?= htmlspecialchars((string)($dbg['last_http_code'] ?? '200')) ?> OK</span>
                         </div>
                     </div>
-                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
-                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">PocketBase HTTP Status</div>
-                        <div style="font-weight: 600; color: <?= ($dbg['last_http_code'] ?? 200) === 200 ? '#10b981' : '#f43f5e' ?>;">
-                            HTTP <?= htmlspecialchars((string)($dbg['last_http_code'] ?? '200')) ?>
-                        </div>
-                    </div>
+                    <?php if ($dbg): ?>
+                        <pre style="margin: 0; padding: 0.6rem; background: rgba(0,0,0,0.45); border-radius: 6px; font-size: 0.75rem; color: #a5f3fc; overflow-x: auto; max-height: 160px;"><?= htmlspecialchars(json_encode([
+                            'session_user_id' => $_SESSION['tiktak_user_id'] ?? null,
+                            'query_debug' => $dbg
+                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+                    <?php endif; ?>
+                </div>
+            </details>
+
+            <!-- Dashboard Filter & Sorting Controls Toolbar -->
+            <div class="dashboard-controls-bar">
+                <div class="type-filter-group" id="typeFilterContainer">
+                    <button type="button" class="filter-chip-btn active" data-type="all">
+                        <span>All</span>
+                        <span class="chip-count" id="count-all"><?= $typeCounts['all'] ?></span>
+                    </button>
+                    <button type="button" class="filter-chip-btn" data-type="redirect">
+                        <span>🔗 Links</span>
+                        <span class="chip-count" id="count-redirect"><?= $typeCounts['redirect'] ?></span>
+                    </button>
+                    <button type="button" class="filter-chip-btn" data-type="text">
+                        <span>📝 Notes</span>
+                        <span class="chip-count" id="count-text"><?= $typeCounts['text'] ?></span>
+                    </button>
+                    <button type="button" class="filter-chip-btn" data-type="hosting">
+                        <span>🌐 Micro-host</span>
+                        <span class="chip-count" id="count-hosting"><?= $typeCounts['hosting'] ?></span>
+                    </button>
+                    <button type="button" class="filter-chip-btn" data-type="links">
+                        <span>📑 Link Lists</span>
+                        <span class="chip-count" id="count-links"><?= $typeCounts['links'] ?></span>
+                    </button>
+                    <button type="button" class="filter-chip-btn" data-type="files">
+                        <span>📁 Files</span>
+                        <span class="chip-count" id="count-files"><?= $typeCounts['files'] ?></span>
+                    </button>
                 </div>
 
-                <?php if ($dbg): ?>
-                    <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-                        <div>Query Collection: <code style="color: var(--accent-cyan);"><?= htmlspecialchars($dbg['collection'] ?? '') ?></code></div>
-                        <div>Filter Sent: <code style="color: var(--accent-cyan);"><?= htmlspecialchars($dbg['filter'] ?? '') ?></code></div>
-                        <div>Resolved ID: <code style="color: var(--accent-cyan);"><?= htmlspecialchars((string)($dbg['resolved_user_id'] ?? '')) ?></code></div>
+                <div class="sort-controls-group">
+                    <span class="sort-label">Sort:</span>
+                    <div class="sort-buttons" id="sortButtonsContainer">
+                        <button type="button" class="sort-btn active" data-sort="newest" title="Newest created first">
+                            🕒 Newest
+                        </button>
+                        <button type="button" class="sort-btn" data-sort="oldest" title="Oldest created first">
+                            ⏳ Oldest
+                        </button>
+                        <button type="button" class="sort-btn" data-sort="visits" title="Most visited first">
+                            🔥 Visits
+                        </button>
+                        <button type="button" class="sort-btn" data-sort="title" title="Title alphabetically">
+                            🔤 Title
+                        </button>
+                        <button type="button" class="sort-btn" data-sort="code" title="Code alphabetically">
+                            🏷️ Code
+                        </button>
                     </div>
-                <?php endif; ?>
-
-                <details style="margin-top: 0.6rem;">
-                    <summary style="font-size: 0.78rem; color: var(--text-dim); cursor: pointer; user-select: none;">
-                        Click to toggle raw diagnostic JSON log
-                    </summary>
-                    <pre style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.45); border-radius: 6px; font-size: 0.78rem; color: #a5f3fc; overflow-x: auto; max-height: 200px;"><?= htmlspecialchars(json_encode([
-                        'session' => [
-                            'tiktak_user_id' => $_SESSION['tiktak_user_id'] ?? null,
-                            'tiktak_username' => $_SESSION['tiktak_username'] ?? null,
-                            'tiktak_name' => $_SESSION['tiktak_name'] ?? null,
-                        ],
-                        'current_user' => $user,
-                        'resources_count' => count($resources),
-                        'pocketbase_query_debug' => $dbg,
-                    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
-                </details>
+                    <div class="results-badge" id="resultsCountBadge">
+                        Showing <strong id="visibleCount" style="color: var(--accent-cyan);"><?= count($resources) ?></strong> of <?= count($resources) ?>
+                    </div>
+                </div>
             </div>
 
             <!-- Resources Table -->
@@ -194,7 +243,7 @@ $baseUrl = get_base_url();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($resources as $r): ?>
+                            <?php foreach ($resources as $index => $r): ?>
                                 <?php 
                                     $expInfo = format_expiry_status($r['expires_at']);
                                     $fullUrl = $baseUrl . '/code=' . $r['code'];
@@ -217,7 +266,15 @@ $baseUrl = get_base_url();
                                         $preview = "MinIO folder: {$r['code']}/ • {$fStats['total_files']} files ({$fStats['total_size_formatted']})";
                                     }
                                 ?>
-                                <tr id="resource-row-<?= $r['id'] ?>" class="resource-item-row" data-code="<?= htmlspecialchars($r['code']) ?>" data-title="<?= htmlspecialchars($r['title']) ?>">
+                                <tr id="resource-row-<?= $r['id'] ?>" 
+                                    class="resource-item-row" 
+                                    data-id="<?= htmlspecialchars((string)$r['id']) ?>"
+                                    data-code="<?= htmlspecialchars(strtoupper($r['code'])) ?>" 
+                                    data-title="<?= htmlspecialchars(mb_strtolower($r['title'] ?: 'untitled')) ?>"
+                                    data-type="<?= htmlspecialchars($r['type']) ?>"
+                                    data-visits="<?= (int)($r['visits_count'] ?? 0) ?>"
+                                    data-created="<?= htmlspecialchars($r['created_at']) ?>"
+                                    data-order="<?= $index ?>">
                                     <td>
                                         <div class="resource-code-cell">
                                             <span><?= htmlspecialchars($r['code']) ?></span>

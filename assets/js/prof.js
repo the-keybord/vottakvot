@@ -671,27 +671,157 @@ function showQrCode(code, fullUrl) {
 }
 
 /**
- * Filter and search through resources
+ * Filter and sort through resources (Search + Type Filter + Sorting)
  */
+let currentFilterType = 'all';
+let currentSortBy = 'newest';
+
 function initFilterSearch() {
     const filterInput = document.getElementById('filterInput');
-    if (!filterInput) return;
+    const typeButtons = document.querySelectorAll('.filter-chip-btn');
+    const sortButtons = document.querySelectorAll('.sort-btn');
 
-    filterInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('.resource-item-row');
-        
-        rows.forEach(row => {
-            const code = row.getAttribute('data-code') || '';
-            const title = row.getAttribute('data-title') || '';
-            if (code.toLowerCase().includes(query) || title.toLowerCase().includes(query)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+    // 1. Search input listener
+    if (filterInput) {
+        filterInput.addEventListener('input', () => {
+            applyResourceFiltersAndSort();
+        });
+    }
+
+    // 2. Type filter chips listener
+    typeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilterType = btn.getAttribute('data-type') || 'all';
+            applyResourceFiltersAndSort();
         });
     });
+
+    // 3. Sort buttons listener
+    sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sortButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSortBy = btn.getAttribute('data-sort') || 'newest';
+            applyResourceFiltersAndSort();
+        });
+    });
+
+    // Initial pass to ensure default sorting and counter sync
+    applyResourceFiltersAndSort();
 }
+
+/**
+ * Core filtering and sorting engine for resources table
+ */
+function applyResourceFiltersAndSort() {
+    const tableBody = document.querySelector('.resources-table tbody');
+    if (!tableBody) return;
+
+    const filterInput = document.getElementById('filterInput');
+    const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
+    const rows = Array.from(tableBody.querySelectorAll('.resource-item-row'));
+
+    let visibleCount = 0;
+
+    // 1. Filter rows by search query and type
+    rows.forEach(row => {
+        const code = (row.getAttribute('data-code') || '').toLowerCase();
+        const title = (row.getAttribute('data-title') || '').toLowerCase();
+        const type = (row.getAttribute('data-type') || '').toLowerCase();
+
+        const matchesQuery = !query || code.includes(query) || title.includes(query);
+        const matchesType = currentFilterType === 'all' || type === currentFilterType;
+
+        if (matchesQuery && matchesType) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // 2. Sort rows based on currentSortBy
+    rows.sort((a, b) => {
+        if (currentSortBy === 'newest') {
+            const dateA = a.getAttribute('data-created') || '';
+            const dateB = b.getAttribute('data-created') || '';
+            const cmp = dateB.localeCompare(dateA);
+            if (cmp !== 0) return cmp;
+            return (parseInt(a.getAttribute('data-order')) || 0) - (parseInt(b.getAttribute('data-order')) || 0);
+        } else if (currentSortBy === 'oldest') {
+            const dateA = a.getAttribute('data-created') || '';
+            const dateB = b.getAttribute('data-created') || '';
+            const cmp = dateA.localeCompare(dateB);
+            if (cmp !== 0) return cmp;
+            return (parseInt(b.getAttribute('data-order')) || 0) - (parseInt(a.getAttribute('data-order')) || 0);
+        } else if (currentSortBy === 'visits') {
+            const vA = parseInt(a.getAttribute('data-visits')) || 0;
+            const vB = parseInt(b.getAttribute('data-visits')) || 0;
+            if (vB !== vA) return vB - vA;
+            return (a.getAttribute('data-title') || '').localeCompare(b.getAttribute('data-title') || '');
+        } else if (currentSortBy === 'title') {
+            const tA = (a.getAttribute('data-title') || '').toLowerCase();
+            const tB = (b.getAttribute('data-title') || '').toLowerCase();
+            return tA.localeCompare(tB);
+        } else if (currentSortBy === 'code') {
+            const cA = (a.getAttribute('data-code') || '').toLowerCase();
+            const cB = (b.getAttribute('data-code') || '').toLowerCase();
+            return cA.localeCompare(cB);
+        }
+        return 0;
+    });
+
+    // Re-order in the DOM
+    rows.forEach(row => tableBody.appendChild(row));
+
+    // Update visible items count badge
+    const visibleCountElem = document.getElementById('visibleCount');
+    if (visibleCountElem) {
+        visibleCountElem.innerText = visibleCount;
+    }
+
+    // No matching results placeholder row
+    let noMatchRow = document.getElementById('noMatchRow');
+    if (visibleCount === 0 && rows.length > 0) {
+        if (!noMatchRow) {
+            noMatchRow = document.createElement('tr');
+            noMatchRow.id = 'noMatchRow';
+            noMatchRow.innerHTML = `<td colspan="6" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
+                <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
+                <div style="font-size: 1.15rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.35rem;">No matching resources found</div>
+                <p style="font-size: 0.88rem; color: var(--text-dim); margin-bottom: 1rem;">Try clearing the search query or switching to a different type tab.</p>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="resetResourceFilters()">Reset Filters</button>
+            </td>`;
+            tableBody.appendChild(noMatchRow);
+        } else {
+            noMatchRow.style.display = '';
+        }
+    } else if (noMatchRow) {
+        noMatchRow.style.display = 'none';
+    }
+}
+
+/**
+ * Reset all filters back to default (All types, no search query)
+ */
+function resetResourceFilters() {
+    const filterInput = document.getElementById('filterInput');
+    if (filterInput) filterInput.value = '';
+    
+    const typeButtons = document.querySelectorAll('.filter-chip-btn');
+    typeButtons.forEach(btn => {
+        if (btn.getAttribute('data-type') === 'all') {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    currentFilterType = 'all';
+    applyResourceFiltersAndSort();
+}
+window.resetResourceFilters = resetResourceFilters;
 
 /**
  * Extend expired resource validity by N hours (+2 hours)

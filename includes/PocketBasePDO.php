@@ -168,7 +168,9 @@ class PocketBaseStatement {
             $this->results = array_map([$this, 'normalizeResourceRecord'], $records);
             // Sort in PHP memory: latest created first
             usort($this->results, function($a, $b) {
-                return strcmp($b['created_at'], $a['created_at']);
+                $c = strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
+                if ($c !== 0) return $c;
+                return strcmp($b['id'] ?? '', $a['id'] ?? '');
             });
             $this->affectedRows = count($this->results);
             return true;
@@ -613,8 +615,8 @@ class PocketBaseStatement {
             'content_text' => $rec['content_text'] ?? '',
             'visits_count' => (int)($rec['visits_count'] ?? 0),
             'expires_at' => $rec['expires_at'] ?? null,
-            'created_at' => $rec['created'] ?? ($rec['created_at'] ?? date('Y-m-d H:i:s')),
-            'updated_at' => $rec['updated'] ?? ($rec['updated_at'] ?? date('Y-m-d H:i:s')),
+            'created_at' => !empty($rec['created_at']) ? $rec['created_at'] : ($rec['created'] ?? date('Y-m-d H:i:s')),
+            'updated_at' => !empty($rec['updated_at']) ? $rec['updated_at'] : ($rec['updated'] ?? date('Y-m-d H:i:s')),
         ];
     }
 
