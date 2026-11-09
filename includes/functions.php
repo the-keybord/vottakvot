@@ -120,6 +120,11 @@ function current_user(): ?array {
             $userId = 'tyoun07mmiuck1b';
             $_SESSION['tiktak_user_id'] = $userId;
         }
+    } else {
+        if ($userId === 'tyoun07mmiuck1b' || ($_SESSION['tiktak_username'] ?? '') === 'prof') {
+            $userId = 1;
+            $_SESSION['tiktak_user_id'] = 1;
+        }
     }
     return [
         'id' => $userId,

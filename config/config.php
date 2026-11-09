@@ -9,8 +9,8 @@ if (!defined('TIKTAK_ROOT')) {
     define('TIKTAK_ROOT', dirname(__DIR__));
 }
 
-// Database Driver: 'pocketbase' (default) or 'mysql'
-define('DB_DRIVER', getenv('DB_DRIVER') ?: 'pocketbase');
+// Database Driver: 'mysql' (default) or 'pocketbase'
+define('DB_DRIVER', getenv('DB_DRIVER') ?: 'mysql');
 
 // PocketBase Backend Configuration
 define('POCKETBASE_URL', getenv('POCKETBASE_URL') ?: 'https://db.zece.info');

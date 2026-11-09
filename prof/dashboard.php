@@ -128,6 +128,7 @@ $baseUrl = get_base_url();
                     }
                 }
             ?>
+            <?php if ($pdo instanceof PocketBasePDO): ?>
             <details class="dashboard-db-status" style="margin-bottom: 1.25rem; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.6rem 1rem;">
                 <summary style="font-size: 0.82rem; color: var(--text-dim); cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -166,6 +167,7 @@ $baseUrl = get_base_url();
                     <?php endif; ?>
                 </div>
             </details>
+            <?php endif; ?>
 
             <!-- Dashboard Filter & Sorting Controls Toolbar -->
             <div class="dashboard-controls-bar">
