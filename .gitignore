@@ -8,6 +8,10 @@ data/
 *.sqlite
 *.sqlite3
 
+# Micro-hosting user sites
+sites/*
+!sites/.gitkeep
+
 # Logs
 *.log
 logs/
