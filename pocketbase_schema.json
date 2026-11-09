@@ -1,0 +1,171 @@
+[
+  {
+    "name": "tiktak_resources",
+    "type": "base",
+    "system": false,
+    "fields": [
+      {
+        "name": "code",
+        "type": "text",
+        "required": true,
+        "presentable": true
+      },
+      {
+        "name": "user_id",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "title",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "type",
+        "type": "select",
+        "values": ["redirect", "text", "files", "hosting", "links"],
+        "required": true
+      },
+      {
+        "name": "content_link",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "content_text",
+        "type": "text",
+        "max": 10000000,
+        "required": false
+      },
+      {
+        "name": "visits_count",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "expires_at",
+        "type": "date",
+        "required": false
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_tiktak_resources_code` ON `tiktak_resources` (`code`)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  },
+  {
+    "name": "tiktak_resource_files",
+    "type": "base",
+    "system": false,
+    "fields": [
+      {
+        "name": "resource_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "original_filename",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "stored_filename",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "s3_key",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "file_size",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "mime_type",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "upload_date",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "uploaded_at",
+        "type": "date",
+        "required": false
+      },
+      {
+        "name": "ip_hash",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "downloads_count",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "is_pinned",
+        "type": "bool",
+        "required": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_tiktak_rf_res_id` ON `tiktak_resource_files` (`resource_id`)",
+      "CREATE INDEX `idx_tiktak_rf_code` ON `tiktak_resource_files` (`code`)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": ""
+  },
+  {
+    "name": "tiktak_access_logs",
+    "type": "base",
+    "system": false,
+    "fields": [
+      {
+        "name": "resource_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "accessed_at",
+        "type": "date",
+        "required": false
+      },
+      {
+        "name": "ip_hash",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "user_agent",
+        "type": "text",
+        "required": false
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_tiktak_al_res_id` ON `tiktak_access_logs` (`resource_id`)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null
+  }
+]

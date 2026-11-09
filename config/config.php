@@ -9,10 +9,18 @@ if (!defined('TIKTAK_ROOT')) {
     define('TIKTAK_ROOT', dirname(__DIR__));
 }
 
-// Centralized MySQL Database Configuration
-// All instances connect directly to the centralized database on 85.120.144.58
-define('DB_HOST', getenv('DB_HOST') ?: 'db.zece.info');
-define('DB_PORT', getenv('DB_PORT') ?: '443');
+// Database Driver: 'pocketbase' (default) or 'mysql'
+define('DB_DRIVER', getenv('DB_DRIVER') ?: 'pocketbase');
+
+// PocketBase Backend Configuration
+define('POCKETBASE_URL', getenv('POCKETBASE_URL') ?: 'https://db.zece.info');
+define('POCKETBASE_TABLE_PREFIX', getenv('POCKETBASE_TABLE_PREFIX') ?: 'tiktak_');
+define('POCKETBASE_ADMIN_EMAIL', getenv('POCKETBASE_ADMIN_EMAIL') ?: 'bocanceatv@gmail.com');
+define('POCKETBASE_ADMIN_PASSWORD', getenv('POCKETBASE_ADMIN_PASSWORD') ?: '0909atat');
+
+// Legacy Centralized MySQL Database Configuration (if DB_DRIVER=mysql)
+define('DB_HOST', getenv('DB_HOST') ?: '85.120.144.58');
+define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_NAME', getenv('DB_NAME') ?: 'newuser_tiktak');
 define('DB_USER', getenv('DB_USER') ?: 'newuser');
 define('DB_PASS', getenv('DB_PASS') ?: 'secure_password');

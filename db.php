@@ -11,7 +11,14 @@ function get_db_connection() {
         return $pdo;
     }
 
-    $driver = 'mysql';
+    $driver = defined('DB_DRIVER') ? DB_DRIVER : 'pocketbase';
+
+    if ($driver === 'pocketbase') {
+        require_once __DIR__ . '/includes/PocketBasePDO.php';
+        $pdo = new PocketBasePDO();
+        return $pdo;
+    }
+
     $host = DB_HOST;
     $port = DB_PORT;
     $dbname = DB_NAME;
