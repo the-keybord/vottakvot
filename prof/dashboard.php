@@ -108,6 +108,70 @@ $baseUrl = get_base_url();
                 </div>
             </div>
 
+            <!-- Diagnostic / Debug Monitor Banner -->
+            <?php 
+                $dbg = ($pdo instanceof PocketBasePDO) ? $pdo->lastQueryDebug : null;
+            ?>
+            <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid <?= count($resources) > 0 ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.5)' ?>; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.1rem;">🔍</span>
+                        <strong style="color: var(--accent-cyan); font-size: 0.95rem; font-family: var(--font-heading);">Database &amp; User ID Monitor</strong>
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.75rem;">Driver: <?= DB_DRIVER ?></span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-dim);">
+                        PocketBase: <code style="color: var(--accent-cyan);"><?= defined('POCKETBASE_URL') ? POCKETBASE_URL : 'N/A' ?></code>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; font-size: 0.86rem;">
+                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
+                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Current User ID in Session</div>
+                        <code style="font-size: 0.95rem; font-weight: 700; color: #38bdf8;"><?= htmlspecialchars((string)($user['id'] ?? '')) ?></code>
+                    </div>
+                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
+                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Logged In As</div>
+                        <div style="font-weight: 600; color: var(--text-main);"><?= htmlspecialchars($user['username'] ?? '') ?> (<?= htmlspecialchars($user['name'] ?? '') ?>)</div>
+                    </div>
+                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
+                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">Resources Returned</div>
+                        <div style="font-weight: 700; font-size: 1.1rem; color: <?= count($resources) > 0 ? '#10b981' : '#f43f5e' ?>;">
+                            <?= count($resources) ?> <?= count($resources) === 1 ? 'item' : 'items' ?>
+                        </div>
+                    </div>
+                    <div style="background: rgba(0, 0, 0, 0.25); padding: 0.6rem 0.8rem; border-radius: 8px;">
+                        <div style="color: var(--text-dim); font-size: 0.74rem; text-transform: uppercase; margin-bottom: 0.2rem;">PocketBase HTTP Status</div>
+                        <div style="font-weight: 600; color: <?= ($dbg['last_http_code'] ?? 200) === 200 ? '#10b981' : '#f43f5e' ?>;">
+                            HTTP <?= htmlspecialchars((string)($dbg['last_http_code'] ?? '200')) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if ($dbg): ?>
+                    <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                        <div>Query Collection: <code style="color: var(--accent-cyan);"><?= htmlspecialchars($dbg['collection'] ?? '') ?></code></div>
+                        <div>Filter Sent: <code style="color: var(--accent-cyan);"><?= htmlspecialchars($dbg['filter'] ?? '') ?></code></div>
+                        <div>Resolved ID: <code style="color: var(--accent-cyan);"><?= htmlspecialchars((string)($dbg['resolved_user_id'] ?? '')) ?></code></div>
+                    </div>
+                <?php endif; ?>
+
+                <details style="margin-top: 0.6rem;">
+                    <summary style="font-size: 0.78rem; color: var(--text-dim); cursor: pointer; user-select: none;">
+                        Click to toggle raw diagnostic JSON log
+                    </summary>
+                    <pre style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(0,0,0,0.45); border-radius: 6px; font-size: 0.78rem; color: #a5f3fc; overflow-x: auto; max-height: 200px;"><?= htmlspecialchars(json_encode([
+                        'session' => [
+                            'tiktak_user_id' => $_SESSION['tiktak_user_id'] ?? null,
+                            'tiktak_username' => $_SESSION['tiktak_username'] ?? null,
+                            'tiktak_name' => $_SESSION['tiktak_name'] ?? null,
+                        ],
+                        'current_user' => $user,
+                        'resources_count' => count($resources),
+                        'pocketbase_query_debug' => $dbg,
+                    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+                </details>
+            </div>
+
             <!-- Resources Table -->
             <div class="resources-table-container">
                 <?php if (empty($resources)): ?>

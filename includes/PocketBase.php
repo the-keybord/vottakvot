@@ -10,6 +10,9 @@ class PocketBase {
     private string $baseUrl;
     private ?string $token = null;
     private static ?PocketBase $instance = null;
+    private mixed $lastResponse = null;
+    private int $lastHttpCode = 0;
+    private string $lastEndpoint = '';
 
     public function __construct(?string $baseUrl = null, ?string $token = null) {
         $this->baseUrl = rtrim($baseUrl ?: (defined('POCKETBASE_URL') ? POCKETBASE_URL : 'https://db.zece.info'), '/');
@@ -45,6 +48,18 @@ class PocketBase {
 
     public function getToken(): ?string {
         return $this->token;
+    }
+
+    public function getLastResponse(): mixed {
+        return $this->lastResponse;
+    }
+
+    public function getLastHttpCode(): int {
+        return $this->lastHttpCode;
+    }
+
+    public function getLastEndpoint(): string {
+        return $this->lastEndpoint;
     }
 
     /**
@@ -226,16 +241,34 @@ class PocketBase {
         $curlErr = curl_error($ch);
         curl_close($ch);
 
+        $this->lastHttpCode = $httpCode;
+        $this->lastEndpoint = $endpoint;
+
         if ($body === false) {
-            return ['code' => 500, 'message' => 'cURL Error: ' . $curlErr, 'status' => 500];
+            $this->lastResponse = ['code' => 500, 'message' => 'cURL Error: ' . $curlErr, 'status' => 500];
+            return $this->lastResponse;
+        }
+
+        // If 401 Unauthorized or 403 Forbidden with a cached token, retry once with fresh auth
+        if (($httpCode === 401 || $httpCode === 403) && !str_contains($endpoint, 'auth-with-password')) {
+            @unlink(self::getCachePath());
+            $this->token = null;
+            if (defined('POCKETBASE_ADMIN_EMAIL') && defined('POCKETBASE_ADMIN_PASSWORD') && !empty(POCKETBASE_ADMIN_EMAIL)) {
+                $auth = $this->authAsSuperuser(POCKETBASE_ADMIN_EMAIL, POCKETBASE_ADMIN_PASSWORD);
+                if (!empty($auth['token'])) {
+                    return $this->request($method, $endpoint, $data);
+                }
+            }
         }
 
         if ($httpCode === 204) {
+            $this->lastResponse = true;
             return true;
         }
 
         $decoded = json_decode($body, true);
-        return $decoded !== null ? $decoded : ['status' => $httpCode, 'raw' => $body];
+        $this->lastResponse = $decoded !== null ? $decoded : ['status' => $httpCode, 'raw' => $body];
+        return $this->lastResponse;
     }
 
     /**

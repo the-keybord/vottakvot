@@ -10,6 +10,7 @@ require_once __DIR__ . '/PocketBase.php';
 class PocketBasePDO {
     private PocketBase $pb;
     private ?string $lastInsertId = null;
+    public ?array $lastQueryDebug = null;
 
     public function __construct(?PocketBase $pb = null) {
         $this->pb = $pb ?: PocketBase::getInstance();
@@ -101,11 +102,31 @@ class PocketBaseStatement {
         // 3. SELECT * FROM resources WHERE user_id = ? ORDER BY created_at DESC
         // -------------------------------------------------------------
         if (preg_match('/SELECT .* FROM resources WHERE user_id = \?/i', $sql)) {
-            $userId = $params[0] ?? '';
+            $rawUserId = $params[0] ?? '';
+            $userId = (string)$rawUserId;
+            if ($userId === '1' || $userId === '0' || empty($userId)) {
+                $profRec = $this->pb->getFirstListItem($this->col('users'), 'email = "prof@tiktak.md"');
+                if ($profRec && !empty($profRec['id'])) {
+                    $userId = $profRec['id'];
+                } else {
+                    $userId = 'tyoun07mmiuck1b';
+                }
+            }
+            $filter = 'user_id = "' . addslashes($userId) . '"';
             $records = $this->pb->getFullList($this->col('resources'), [
-                'filter' => 'user_id = "' . addslashes($userId) . '"',
+                'filter' => $filter,
                 'sort' => '-created',
             ]);
+            $this->pdo->lastQueryDebug = [
+                'sql' => $sql,
+                'raw_user_id' => $rawUserId,
+                'resolved_user_id' => $userId,
+                'collection' => $this->col('resources'),
+                'filter' => $filter,
+                'returned_count' => count($records),
+                'last_http_code' => $this->pb->getLastHttpCode(),
+                'last_response' => $this->pb->getLastResponse(),
+            ];
             $this->results = array_map([$this, 'normalizeResourceRecord'], $records);
             $this->affectedRows = count($this->results);
             return true;

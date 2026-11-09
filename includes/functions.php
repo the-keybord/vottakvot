@@ -114,8 +114,15 @@ function current_user(): ?array {
     if (!is_logged_in()) {
         return null;
     }
+    $userId = $_SESSION['tiktak_user_id'];
+    if (defined('DB_DRIVER') && DB_DRIVER === 'pocketbase') {
+        if ($userId === 1 || $userId === '1' || ($_SESSION['tiktak_username'] ?? '') === 'prof') {
+            $userId = 'tyoun07mmiuck1b';
+            $_SESSION['tiktak_user_id'] = $userId;
+        }
+    }
     return [
-        'id' => $_SESSION['tiktak_user_id'],
+        'id' => $userId,
         'username' => $_SESSION['tiktak_username'] ?? '',
         'name' => $_SESSION['tiktak_name'] ?? 'Professor',
     ];
