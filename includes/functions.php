@@ -316,6 +316,15 @@ function ensure_site_dir(string $code): string {
     return $dir;
 }
 
+function sync_site_file_if_missing(string $code, ?string $contentText = null, ?string $title = ''): void {
+    $dir = ensure_site_dir($code);
+    $indexPath = $dir . DIRECTORY_SEPARATOR . 'index.php';
+    if (!file_exists($indexPath) || filesize($indexPath) === 0) {
+        $content = !empty($contentText) ? $contentText : get_default_site_template($code, $title ?: '');
+        @file_put_contents($indexPath, $content);
+    }
+}
+
 /**
  * Securely validate and resolve a path inside a site directory
  */

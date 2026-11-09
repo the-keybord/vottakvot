@@ -48,6 +48,7 @@ if (!$resource) {
 
 // Ensure site directory exists
 $siteDir = ensure_site_dir($code);
+sync_site_file_if_missing($code, $resource['content_text'] ?? null, $resource['title'] ?? '');
 
 // ============================================================================
 // Action: download_zip (Direct file download)
