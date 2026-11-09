@@ -252,8 +252,7 @@ if ($action === 'delete') {
             $delFiles = $pdo->prepare("DELETE FROM resource_files WHERE resource_id = ?");
             $delFiles->execute([$id]);
         } elseif ($resource['type'] === 'hosting') {
-            // Delete micro-site folder on disk
-            delete_site_directory($resource['code']);
+            // Note: Site folder on disk is preserved so user files are never auto-deleted.
         }
 
         // Delete resource

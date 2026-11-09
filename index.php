@@ -60,7 +60,6 @@ if (!empty($code)) {
 
     // Handle Type 4: Micro-hosting Web Directory
     if ($resource['type'] === 'hosting') {
-        sync_site_file_if_missing($resource['code'], $resource['content_text'] ?? null, $resource['title'] ?? '');
         header("Location: /sites/" . $resource['code'] . "/", true, 302);
         exit;
     }

@@ -322,27 +322,7 @@ function ensure_site_dir(string $code): string {
 }
 
 function sync_site_file_if_missing(string $code, ?string $contentText = null, ?string $title = ''): void {
-    $dir = ensure_site_dir($code);
-    $indexPath = $dir . DIRECTORY_SEPARATOR . 'index.php';
-    $htmlPath = $dir . DIRECTORY_SEPARATOR . 'index.html';
-    $htmPath = $dir . DIRECTORY_SEPARATOR . 'index.htm';
-
-    // If any main index already exists, do nothing
-    if (file_exists($indexPath) || file_exists($htmlPath) || file_exists($htmPath)) {
-        return;
-    }
-
-    // Check if site folder already has files (e.g. custom user files)
-    $files = @scandir($dir);
-    $cleanFiles = array_diff($files ?: [], ['.', '..']);
-    if (!empty($cleanFiles)) {
-        return; // User has custom files and chose not to have an index.php
-    }
-
-    // Only auto-create if contentText is present
-    if (!empty($contentText)) {
-        @file_put_contents($indexPath, $contentText);
-    }
+    // Disabled: User manages all site files manually without auto-checks or auto-generation.
 }
 
 /**
