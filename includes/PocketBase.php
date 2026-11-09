@@ -239,10 +239,9 @@ class PocketBase {
         $body = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
-        curl_close($ch);
 
         $this->lastHttpCode = $httpCode;
-        $this->lastEndpoint = $endpoint;
+        $this->lastEndpoint = $path;
 
         if ($body === false) {
             $this->lastResponse = ['code' => 500, 'message' => 'cURL Error: ' . $curlErr, 'status' => 500];
@@ -250,13 +249,13 @@ class PocketBase {
         }
 
         // If 401 Unauthorized or 403 Forbidden with a cached token, retry once with fresh auth
-        if (($httpCode === 401 || $httpCode === 403) && !str_contains($endpoint, 'auth-with-password')) {
+        if (($httpCode === 401 || $httpCode === 403) && !str_contains($path, 'auth-with-password')) {
             @unlink(self::getCachePath());
             $this->token = null;
             if (defined('POCKETBASE_ADMIN_EMAIL') && defined('POCKETBASE_ADMIN_PASSWORD') && !empty(POCKETBASE_ADMIN_EMAIL)) {
                 $auth = $this->authAsSuperuser(POCKETBASE_ADMIN_EMAIL, POCKETBASE_ADMIN_PASSWORD);
                 if (!empty($auth['token'])) {
-                    return $this->request($method, $endpoint, $data);
+                    return $this->request($method, $path, $data);
                 }
             }
         }
