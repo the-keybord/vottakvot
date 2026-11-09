@@ -109,18 +109,32 @@ class PocketBaseStatement {
             $rawUserId = $params[0] ?? '';
             $userId = (string)$rawUserId;
             if ($userId === '1' || $userId === '0' || empty($userId)) {
-                $profRec = $this->pb->getFirstListItem($this->col('users'), "email = 'prof@tiktak.md'");
+                $profRec = $this->pb->getFirstListItem($this->col('users'), "email='prof@tiktak.md'");
                 if ($profRec && !empty($profRec['id'])) {
                     $userId = $profRec['id'];
                 } else {
                     $userId = 'tyoun07mmiuck1b';
                 }
             }
-            $filter = 'user_id = ' . $this->q($userId);
+            $filter = 'user_id=' . $this->q($userId);
             $records = $this->pb->getFullList($this->col('resources'), [
                 'filter' => $filter,
-                'sort' => '-created',
             ]);
+
+            $lastCode = $this->pb->getLastHttpCode();
+            $fallbackUsed = false;
+            // If PocketBase rejected the filter (HTTP >= 400) or returned error,
+            // fetch all resources and filter in PHP memory so the user NEVER sees 0 items!
+            if ($lastCode >= 400 || (empty($records) && $lastCode !== 200)) {
+                $allRecs = $this->pb->getFullList($this->col('resources'));
+                if (!empty($allRecs)) {
+                    $records = array_values(array_filter($allRecs, function($r) use ($userId) {
+                        return ($r['user_id'] ?? '') === $userId;
+                    }));
+                    $fallbackUsed = true;
+                }
+            }
+
             $this->pdo->lastQueryDebug = [
                 'sql' => $sql,
                 'raw_user_id' => $rawUserId,
@@ -128,10 +142,15 @@ class PocketBaseStatement {
                 'collection' => $this->col('resources'),
                 'filter' => $filter,
                 'returned_count' => count($records),
+                'fallback_used' => $fallbackUsed,
                 'last_http_code' => $this->pb->getLastHttpCode(),
                 'last_response' => $this->pb->getLastResponse(),
             ];
             $this->results = array_map([$this, 'normalizeResourceRecord'], $records);
+            // Sort in PHP memory: latest created first
+            usort($this->results, function($a, $b) {
+                return strcmp($b['created_at'], $a['created_at']);
+            });
             $this->affectedRows = count($this->results);
             return true;
         }
@@ -335,11 +354,15 @@ class PocketBaseStatement {
         // -------------------------------------------------------------
         if (preg_match('/SELECT .* FROM resource_files WHERE resource_id = \?/i', $sql)) {
             $resourceId = $params[0] ?? '';
+            $filter = 'resource_id=' . $this->q($resourceId);
             $records = $this->pb->getFullList($this->col('resource_files'), [
-                'filter' => 'resource_id = ' . $this->q($resourceId),
-                'sort' => '-upload_date,-created',
+                'filter' => $filter,
             ]);
             $this->results = array_map([$this, 'normalizeFileRecord'], $records);
+            usort($this->results, function($a, $b) {
+                $c = strcmp($b['upload_date'] ?? '', $a['upload_date'] ?? '');
+                return $c !== 0 ? $c : strcmp($b['uploaded_at'] ?? '', $a['uploaded_at'] ?? '');
+            });
             $this->affectedRows = count($this->results);
             return true;
         }

@@ -115,7 +115,7 @@ class PocketBase {
             // Convert double-quoted values to single-quoted literals: e.g. user_id = "abc" -> user_id = 'abc'
             $params['filter'] = preg_replace('/"([^"]*)"/', "'$1'", $params['filter']);
         }
-        $query = http_build_query($params);
+        $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         return $this->request('GET', "/api/collections/{$collection}/records?" . $query);
     }
 
