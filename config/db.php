@@ -11,7 +11,7 @@ function get_db_connection() {
         return $pdo;
     }
 
-    $driver = defined('DB_DRIVER') ? DB_DRIVER : 'mysql';
+    $driver = defined('DB_DRIVER') ? DB_DRIVER : 'pocketbase';
 
     if ($driver === 'pocketbase') {
         require_once __DIR__ . '/../includes/PocketBasePDO.php';
