@@ -24,6 +24,7 @@ $action = $input['action'] ?? '';
 $pdo = get_db_connection();
 
 require_once __DIR__ . '/../includes/MinioClient.php';
+require_once __DIR__ . '/../includes/GithubSync.php';
 
 if ($action === 'create') {
     if (!is_logged_in()) {
@@ -69,12 +70,40 @@ if ($action === 'create') {
             exit;
         }
     } elseif ($type === 'hosting') {
-        // Prepare site directory
-        ensure_site_dir($code);
-        $indexContent = !empty($contentText) ? $contentText : get_default_site_template($code, $title);
-        $indexPath = safe_site_path($code, 'index.php');
-        if ($indexPath) {
-            file_put_contents($indexPath, $indexContent);
+        $siteDir = ensure_site_dir($code);
+        $ghRepoInput = trim($input['github_repo'] ?? '');
+
+        if ($ghRepoInput !== '') {
+            $ghBranch = trim($input['github_branch'] ?? '');
+            $ghSubdir = trim($input['github_subdir'] ?? '');
+            $ghToken = trim($input['github_token'] ?? '');
+
+            $ghConfig = GithubSync::parseRepoInput($ghRepoInput, $ghBranch, $ghSubdir);
+            if (!$ghConfig) {
+                echo json_encode(['success' => false, 'error' => 'Invalid GitHub repository URL or owner/repo format.']);
+                exit;
+            }
+            if ($ghToken !== '') {
+                $ghConfig['token'] = $ghToken;
+            }
+            $ghConfig['webhook_secret'] = bin2hex(random_bytes(16));
+
+            $syncRes = GithubSync::syncToDirectory($ghConfig, $siteDir);
+            if (!$syncRes['success']) {
+                echo json_encode(['success' => false, 'error' => $syncRes['error'] ?? 'Failed to sync from GitHub.']);
+                exit;
+            }
+            $ghConfig['last_synced_at'] = $syncRes['synced_at'];
+            $contentLink = json_encode($ghConfig, JSON_UNESCAPED_SLASHES);
+            if (empty($title)) {
+                $title = $ghConfig['owner'] . '/' . $ghConfig['repo'];
+            }
+        } else {
+            $indexContent = !empty($contentText) ? $contentText : get_default_site_template($code, $title);
+            $indexPath = safe_site_path($code, 'index.php');
+            if ($indexPath) {
+                file_put_contents($indexPath, $indexContent);
+            }
         }
     } elseif ($type === 'links') {
         // Parse and clean link list
@@ -187,7 +216,18 @@ if ($action === 'update') {
         exit;
     }
 
-    if (!empty($contentLink) && !preg_match('~^https?://~i', $contentLink)) {
+    $existingStmt = $pdo->prepare("SELECT * FROM resources WHERE id = ? AND user_id = ? LIMIT 1");
+    $existingStmt->execute([$id, $userId]);
+    $existingRes = $existingStmt->fetch();
+    if (!$existingRes) {
+        echo json_encode(['success' => false, 'error' => 'Resource not found']);
+        exit;
+    }
+
+    if (($existingRes['type'] ?? '') === 'hosting') {
+        // Preserve GitHub link config JSON stored in content_link
+        $contentLink = $existingRes['content_link'] ?? '';
+    } elseif (!empty($contentLink) && !preg_match('~^https?://~i', $contentLink)) {
         $contentLink = 'https://' . $contentLink;
     }
 

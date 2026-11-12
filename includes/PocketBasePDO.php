@@ -311,6 +311,22 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
+        // 10b. UPDATE resources SET content_link = ?, updated_at = ... WHERE id = ?
+        // -------------------------------------------------------------
+        if (preg_match('/UPDATE resources SET content_link = \?/i', $sql)) {
+            $link = (string)($params[0] ?? '');
+            $id = (string)($params[1] ?? '');
+            $rec = $this->pb->getRecord($this->col('resources'), $id);
+            if ($rec) {
+                $this->pb->update($this->col('resources'), $rec['id'], [
+                    'content_link' => $link,
+                ]);
+                $this->affectedRows = 1;
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------
         // 11. DELETE FROM resources WHERE id = ? AND user_id = ?
         // -------------------------------------------------------------
         if (preg_match('/DELETE FROM resources WHERE id = \? AND user_id = \?/i', $sql)) {

@@ -256,6 +256,10 @@ $baseUrl = get_base_url();
                                     } elseif ($r['type'] === 'hosting') {
                                         $sStats = get_site_summary($r['code']);
                                         $preview = "Web Directory: sites/{$r['code']}/ • {$sStats['total_files']} files ({$sStats['total_size_formatted']})";
+                                        $ghInfo = !empty($r['content_link']) ? json_decode($r['content_link'], true) : null;
+                                        if (is_array($ghInfo) && !empty($ghInfo['owner']) && !empty($ghInfo['repo'])) {
+                                            $preview .= " • GitHub: {$ghInfo['owner']}/{$ghInfo['repo']}@" . ($ghInfo['branch'] ?? 'main');
+                                        }
                                     } elseif ($r['type'] === 'links') {
                                         $linksData = json_decode($r['content_text'] ?? '[]', true) ?: [];
                                         $lCount = count($linksData);
@@ -471,6 +475,32 @@ $baseUrl = get_base_url();
                                     placeholder="Type or paste your index.php code here..."
                                 ></textarea>
                             </div>
+
+                            <details style="margin-top: 0.85rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.65rem 0.85rem;">
+                                <summary style="cursor: pointer; font-size: 0.86rem; font-weight: 600; color: var(--accent-cyan); user-select: none;">
+                                    🔗 Or Link a GitHub Repository (Optional)
+                                </summary>
+                                <div style="margin-top: 0.75rem; display: grid; gap: 0.65rem;">
+                                    <div>
+                                        <label class="form-label" for="inputGithubRepo" style="font-size: 0.8rem;">GitHub Repo URL or <code>owner/repo</code></label>
+                                        <input type="text" id="inputGithubRepo" class="form-control" placeholder="e.g. https://github.com/username/my-site or username/my-site">
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+                                        <div>
+                                            <label class="form-label" for="inputGithubBranch" style="font-size: 0.8rem;">Branch</label>
+                                            <input type="text" id="inputGithubBranch" class="form-control" placeholder="main" value="main">
+                                        </div>
+                                        <div>
+                                            <label class="form-label" for="inputGithubSubdir" style="font-size: 0.8rem;">Subfolder (Optional)</label>
+                                            <input type="text" id="inputGithubSubdir" class="form-control" placeholder="e.g. dist or labs/week1">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" for="inputGithubToken" style="font-size: 0.8rem;">GitHub Token (Optional, for private repos)</label>
+                                        <input type="password" id="inputGithubToken" class="form-control" placeholder="ghp_... or github_pat_..." autocomplete="off">
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
@@ -602,6 +632,9 @@ $baseUrl = get_base_url();
                     <code id="siteModalCode" class="view-code-tag">...</code>
                 </div>
                 <div class="site-header-actions">
+                    <button type="button" id="btnHeaderGithubPull" class="btn btn-primary btn-sm" onclick="syncSiteFromGithub()" style="display: none;" title="Pull latest files from linked GitHub repo">
+                        🔄 Pull GitHub
+                    </button>
                     <a id="siteModalOpenLink" href="#" target="_blank" class="btn btn-secondary btn-sm" title="Open live site in new tab">
                         <span>Open Live Site ↗</span>
                     </a>
@@ -623,6 +656,9 @@ $baseUrl = get_base_url();
                     </button>
                     <button type="button" class="site-tab-btn" data-view="preview" onclick="switchSiteView('preview')">
                         👁️ Live Preview
+                    </button>
+                    <button type="button" class="site-tab-btn" data-view="github" onclick="switchSiteView('github')">
+                        🐙 GitHub Sync <span id="siteGithubStatusDot" style="display: none; color: #10b981;">●</span>
                     </button>
                 </div>
 
@@ -738,6 +774,88 @@ $baseUrl = get_base_url();
                         </div>
                         <div class="preview-frame-wrapper" id="previewFrameWrapper">
                             <iframe id="sitePreviewIframe" src="about:blank" class="site-preview-frame"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 4: GitHub Sync & Webhook Settings -->
+                <div id="siteViewGithub" class="site-view-panel" style="display: none; padding: 1.5rem; overflow-y: auto;">
+                    <div style="max-width: 760px; margin: 0 auto; display: grid; gap: 1.25rem;">
+                        <div style="background: rgba(15, 23, 42, 0.45); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main);">🐙 Link GitHub Repository</h3>
+                                    <p style="margin: 0.25rem 0 0 0; font-size: 0.84rem; color: var(--text-muted);">
+                                        Pull files from a GitHub repo (or a specific subfolder) into <code>sites/<span id="ghSiteCodeLabel">...</span>/</code>. Extra local files are preserved.
+                                    </p>
+                                </div>
+                                <span id="ghLastSyncedBadge" class="badge badge-secondary" style="font-size: 0.78rem; display: none;"></span>
+                            </div>
+
+                            <form id="siteGithubForm" onsubmit="saveGithubLinkConfig(event)" style="display: grid; gap: 0.9rem;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label class="form-label" for="siteGhRepo">Repository URL or <code>owner/repo</code></label>
+                                    <input type="text" id="siteGhRepo" class="form-control" placeholder="https://github.com/username/repo or username/repo" required>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                                    <div class="form-group" style="margin: 0;">
+                                        <label class="form-label" for="siteGhBranch">Branch</label>
+                                        <input type="text" id="siteGhBranch" class="form-control" placeholder="main" value="main">
+                                    </div>
+                                    <div class="form-group" style="margin: 0;">
+                                        <label class="form-label" for="siteGhSubdir">Subfolder (Optional)</label>
+                                        <input type="text" id="siteGhSubdir" class="form-control" placeholder="Leave blank for whole repo, e.g. dist">
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin: 0;">
+                                    <label class="form-label" for="siteGhToken" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>GitHub Token (Optional, for private repos)</span>
+                                        <span id="siteGhTokenStatus" style="font-size: 0.76rem; color: #10b981; font-weight: 600; display: none;">● Token saved</span>
+                                    </label>
+                                    <input type="password" id="siteGhToken" class="form-control" placeholder="Leave blank to keep existing token or for public repos" autocomplete="off">
+                                    <label id="siteGhClearTokenLabel" style="display: none; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+                                        <input type="checkbox" id="siteGhClearToken"> Remove saved token
+                                    </label>
+                                </div>
+
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; margin-top: 0.25rem;">
+                                    <button type="submit" id="btnSaveAndSyncGh" class="btn btn-primary btn-sm">
+                                        💾 Save &amp; Pull Now
+                                    </button>
+                                    <button type="button" id="btnPullGhOnly" class="btn btn-secondary btn-sm" onclick="syncSiteFromGithub()" style="display: none;">
+                                        🔄 Pull Latest Now
+                                    </button>
+                                    <button type="button" id="btnUnlinkGh" class="btn btn-danger btn-sm" onclick="unlinkGithubRepo()" style="display: none; margin-left: auto;">
+                                        Unlink Repo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Webhook Auto-Deploy Card -->
+                        <div id="siteGhWebhookCard" style="display: none; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.25rem;">
+                            <h4 style="margin: 0 0 0.4rem 0; font-size: 0.96rem; color: var(--accent-cyan);">⚡ Auto-Deploy Webhook (Optional)</h4>
+                            <p style="margin: 0 0 0.9rem 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+                                Add this webhook in GitHub under <strong>Repo → Settings → Webhooks → Add webhook</strong> (Content type: <code>application/json</code>, Events: <em>Just the push event</em>) so every push automatically updates this site.
+                            </p>
+                            <div style="display: grid; gap: 0.75rem;">
+                                <div>
+                                    <div style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.25rem;">Payload URL</div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" id="siteGhWebhookUrl" class="form-control" readonly style="font-family: var(--font-mono); font-size: 0.8rem;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('siteGhWebhookUrl').value, 'Webhook URL copied!')">Copy</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.25rem;">Webhook Secret</div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" id="siteGhWebhookSecret" class="form-control" readonly style="font-family: var(--font-mono); font-size: 0.8rem;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('siteGhWebhookSecret').value, 'Webhook secret copied!')">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

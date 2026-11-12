@@ -481,7 +481,11 @@ async function handleResourceSubmit(e) {
         content_text: contentText,
         links: linksArray,
         expiry_preset: currentExpiryPreset,
-        custom_expiry: document.getElementById('inputCustomExpiry') ? document.getElementById('inputCustomExpiry').value : ''
+        custom_expiry: document.getElementById('inputCustomExpiry') ? document.getElementById('inputCustomExpiry').value : '',
+        github_repo: document.getElementById('inputGithubRepo') ? document.getElementById('inputGithubRepo').value.trim() : '',
+        github_branch: document.getElementById('inputGithubBranch') ? document.getElementById('inputGithubBranch').value.trim() : 'main',
+        github_subdir: document.getElementById('inputGithubSubdir') ? document.getElementById('inputGithubSubdir').value.trim() : '',
+        github_token: document.getElementById('inputGithubToken') ? document.getElementById('inputGithubToken').value.trim() : ''
     };
 
     try {
@@ -976,6 +980,7 @@ async function loadSiteData(code) {
         if (data.success) {
             currentSiteSummary = data.summary;
             renderSiteOverview(data.summary);
+            renderGithubConfig(data.github_config || null);
             
             // Choose file to open: index.php, index.html, or first file
             let fileToOpen = null;
@@ -1194,7 +1199,8 @@ function switchSiteView(view) {
     const panels = {
         editor: document.getElementById('siteViewEditor'),
         files: document.getElementById('siteViewFiles'),
-        preview: document.getElementById('siteViewPreview')
+        preview: document.getElementById('siteViewPreview'),
+        github: document.getElementById('siteViewGithub')
     };
 
     Object.keys(panels).forEach(k => {
@@ -1400,5 +1406,189 @@ function setPreviewDevice(device) {
         wrapper.classList.add('device-mobile');
     } else {
         wrapper.classList.add('device-full');
+    }
+}
+
+/**
+ * Render GitHub Sync Configuration & Webhook Details
+ */
+function renderGithubConfig(gh) {
+    const codeLabel = document.getElementById('ghSiteCodeLabel');
+    if (codeLabel) codeLabel.innerText = currentSiteCode || '...';
+
+    const statusDot = document.getElementById('siteGithubStatusDot');
+    const headerPullBtn = document.getElementById('btnHeaderGithubPull');
+    const pullBtn = document.getElementById('btnPullGhOnly');
+    const unlinkBtn = document.getElementById('btnUnlinkGh');
+    const lastSyncedBadge = document.getElementById('ghLastSyncedBadge');
+    const webhookCard = document.getElementById('siteGhWebhookCard');
+
+    const repoInput = document.getElementById('siteGhRepo');
+    const branchInput = document.getElementById('siteGhBranch');
+    const subdirInput = document.getElementById('siteGhSubdir');
+    const tokenInput = document.getElementById('siteGhToken');
+    const tokenStatus = document.getElementById('siteGhTokenStatus');
+    const clearTokenLabel = document.getElementById('siteGhClearTokenLabel');
+    const clearTokenBox = document.getElementById('siteGhClearToken');
+
+    if (tokenInput) tokenInput.value = '';
+    if (clearTokenBox) clearTokenBox.checked = false;
+
+    if (gh && gh.owner && gh.repo) {
+        if (repoInput) repoInput.value = `${gh.owner}/${gh.repo}`;
+        if (branchInput) branchInput.value = gh.branch || 'main';
+        if (subdirInput) subdirInput.value = gh.subdir || '';
+
+        if (statusDot) statusDot.style.display = 'inline';
+        if (headerPullBtn) headerPullBtn.style.display = 'inline-flex';
+        if (pullBtn) pullBtn.style.display = 'inline-flex';
+        if (unlinkBtn) unlinkBtn.style.display = 'inline-flex';
+
+        if (tokenStatus) tokenStatus.style.display = gh.has_token ? 'inline' : 'none';
+        if (clearTokenLabel) clearTokenLabel.style.display = gh.has_token ? 'inline-flex' : 'none';
+
+        if (lastSyncedBadge) {
+            lastSyncedBadge.style.display = 'inline-block';
+            lastSyncedBadge.innerText = gh.last_synced_at
+                ? `Last synced: ${gh.last_synced_at}${gh.last_commit ? ' (' + gh.last_commit + ')' : ''}`
+                : 'Not synced yet';
+        }
+
+        if (webhookCard) {
+            webhookCard.style.display = 'block';
+            const urlInput = document.getElementById('siteGhWebhookUrl');
+            const secretInput = document.getElementById('siteGhWebhookSecret');
+            if (urlInput) urlInput.value = gh.webhook_url || '';
+            if (secretInput) secretInput.value = gh.webhook_secret || '';
+        }
+    } else {
+        if (repoInput) repoInput.value = '';
+        if (branchInput) branchInput.value = 'main';
+        if (subdirInput) subdirInput.value = '';
+
+        if (statusDot) statusDot.style.display = 'none';
+        if (headerPullBtn) headerPullBtn.style.display = 'none';
+        if (pullBtn) pullBtn.style.display = 'none';
+        if (unlinkBtn) unlinkBtn.style.display = 'none';
+        if (tokenStatus) tokenStatus.style.display = 'none';
+        if (clearTokenLabel) clearTokenLabel.style.display = 'none';
+        if (lastSyncedBadge) lastSyncedBadge.style.display = 'none';
+        if (webhookCard) webhookCard.style.display = 'none';
+    }
+}
+
+/**
+ * Save GitHub Link Settings & Pull Immediately
+ */
+async function saveGithubLinkConfig(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveAndSyncGh');
+    const origText = btn ? btn.innerText : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Syncing from GitHub...';
+    }
+
+    try {
+        const res = await fetch('/api/site.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'github_save',
+                code: currentSiteCode,
+                github_repo: document.getElementById('siteGhRepo').value.trim(),
+                github_branch: document.getElementById('siteGhBranch').value.trim() || 'main',
+                github_subdir: document.getElementById('siteGhSubdir').value.trim(),
+                github_token: document.getElementById('siteGhToken').value.trim(),
+                clear_token: document.getElementById('siteGhClearToken')?.checked || false,
+                sync_now: true
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Synced ${data.files_extracted} files from GitHub!`, 'success');
+            renderGithubConfig(data.github_config);
+            if (data.summary) {
+                currentSiteSummary = data.summary;
+                renderSiteOverview(data.summary);
+            }
+        } else {
+            showToast(data.error || 'Failed to sync from GitHub', 'error');
+        }
+    } catch (err) {
+        showToast('Network error syncing from GitHub', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = origText;
+        }
+    }
+}
+
+/**
+ * Pull Latest Files from Linked GitHub Repo
+ */
+async function syncSiteFromGithub() {
+    const headerBtn = document.getElementById('btnHeaderGithubPull');
+    const pullBtn = document.getElementById('btnPullGhOnly');
+    if (headerBtn) { headerBtn.disabled = true; headerBtn.innerText = 'Pulling...'; }
+    if (pullBtn) { pullBtn.disabled = true; pullBtn.innerText = 'Pulling...'; }
+
+    try {
+        const res = await fetch('/api/site.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'github_sync',
+                code: currentSiteCode
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Pulled ${data.files_extracted} files from GitHub!`, 'success');
+            renderGithubConfig(data.github_config);
+            if (data.summary) {
+                currentSiteSummary = data.summary;
+                renderSiteOverview(data.summary);
+            }
+            if (currentSiteFile) {
+                loadSiteFile(currentSiteFile);
+            }
+        } else {
+            showToast(data.error || 'GitHub pull failed', 'error');
+        }
+    } catch (err) {
+        showToast('Network error pulling from GitHub', 'error');
+    } finally {
+        if (headerBtn) { headerBtn.disabled = false; headerBtn.innerText = '🔄 Pull GitHub'; }
+        if (pullBtn) { pullBtn.disabled = false; pullBtn.innerText = '🔄 Pull Latest Now'; }
+    }
+}
+
+/**
+ * Unlink GitHub Repo (keeps local files intact)
+ */
+async function unlinkGithubRepo() {
+    if (!confirm('Unlink this GitHub repository? Your existing files in the site folder will NOT be deleted.')) {
+        return;
+    }
+    try {
+        const res = await fetch('/api/site.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'github_unlink',
+                code: currentSiteCode
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('GitHub repository unlinked', 'success');
+            renderGithubConfig(null);
+        } else {
+            showToast(data.error || 'Failed to unlink repo', 'error');
+        }
+    } catch (err) {
+        showToast('Network error unlinking repo', 'error');
     }
 }

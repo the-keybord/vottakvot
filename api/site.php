@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/GithubSync.php';
 
 // Check authentication
 if (!is_logged_in()) {
@@ -99,12 +100,14 @@ header('Content-Type: application/json; charset=utf-8');
 // ============================================================================
 if ($action === 'list') {
     $summary = get_site_summary($code);
+    $ghRaw = GithubSync::decodeConfig($resource['content_link'] ?? '');
     echo json_encode([
         'success' => true,
         'code' => $code,
         'title' => $resource['title'],
         'summary' => $summary,
-        'site_url' => get_base_url() . '/sites/' . $code . '/'
+        'site_url' => get_base_url() . '/sites/' . $code . '/',
+        'github_config' => GithubSync::maskConfigForUi($ghRaw, $code, get_base_url()),
     ]);
     exit;
 }
@@ -432,6 +435,109 @@ if ($action === 'upload') {
         'uploaded_count' => $countSaved,
         'errors' => $errors,
         'summary' => get_site_summary($code)
+    ]);
+    exit;
+}
+
+// ============================================================================
+// Action: github_save (Link or update GitHub repository configuration)
+// ============================================================================
+if ($action === 'github_save') {
+    $repoInput = trim($input['github_repo'] ?? '');
+    $branch = trim($input['github_branch'] ?? '');
+    $subdir = trim($input['github_subdir'] ?? '');
+    $token = trim($input['github_token'] ?? '');
+    $clearToken = !empty($input['clear_token']);
+    $syncNow = !empty($input['sync_now']);
+
+    $parsed = GithubSync::parseRepoInput($repoInput, $branch, $subdir);
+    if (!$parsed) {
+        echo json_encode(['success' => false, 'error' => 'Please enter a valid GitHub URL or owner/repo.']);
+        exit;
+    }
+
+    $existing = GithubSync::decodeConfig($resource['content_link'] ?? '');
+    if (!$clearToken) {
+        if ($token !== '') {
+            $parsed['token'] = $token;
+        } elseif (!empty($existing['token'])) {
+            $parsed['token'] = $existing['token'];
+        }
+    }
+
+    $parsed['webhook_secret'] = !empty($existing['webhook_secret'])
+        ? $existing['webhook_secret']
+        : bin2hex(random_bytes(16));
+    if (!empty($existing['last_synced_at'])) {
+        $parsed['last_synced_at'] = $existing['last_synced_at'];
+    }
+    if (!empty($existing['last_commit'])) {
+        $parsed['last_commit'] = $existing['last_commit'];
+    }
+
+    $syncResult = null;
+    if ($syncNow) {
+        $syncResult = GithubSync::syncToDirectory($parsed, $siteDir);
+        if (!$syncResult['success']) {
+            echo json_encode(['success' => false, 'error' => $syncResult['error'] ?? 'GitHub sync failed.']);
+            exit;
+        }
+        $parsed['last_synced_at'] = $syncResult['synced_at'];
+    }
+
+    $pdo->prepare("UPDATE resources SET content_link = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        ->execute([json_encode($parsed, JSON_UNESCAPED_SLASHES), $resource['id']]);
+
+    echo json_encode([
+        'success' => true,
+        'synced' => $syncNow,
+        'files_extracted' => $syncResult['files_extracted'] ?? 0,
+        'github_config' => GithubSync::maskConfigForUi($parsed, $code, get_base_url()),
+        'summary' => get_site_summary($code),
+    ]);
+    exit;
+}
+
+// ============================================================================
+// Action: github_sync (Pull latest files from linked GitHub repository)
+// ============================================================================
+if ($action === 'github_sync') {
+    $config = GithubSync::decodeConfig($resource['content_link'] ?? '');
+    if (!$config) {
+        echo json_encode(['success' => false, 'error' => 'No GitHub repository is linked to this site yet.']);
+        exit;
+    }
+
+    $syncResult = GithubSync::syncToDirectory($config, $siteDir);
+    if (!$syncResult['success']) {
+        echo json_encode(['success' => false, 'error' => $syncResult['error'] ?? 'GitHub sync failed.']);
+        exit;
+    }
+
+    $config['last_synced_at'] = $syncResult['synced_at'];
+    $pdo->prepare("UPDATE resources SET content_link = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        ->execute([json_encode($config, JSON_UNESCAPED_SLASHES), $resource['id']]);
+
+    echo json_encode([
+        'success' => true,
+        'files_extracted' => $syncResult['files_extracted'],
+        'total_bytes' => $syncResult['total_bytes'],
+        'github_config' => GithubSync::maskConfigForUi($config, $code, get_base_url()),
+        'summary' => get_site_summary($code),
+    ]);
+    exit;
+}
+
+// ============================================================================
+// Action: github_unlink (Remove GitHub link without deleting local files)
+// ============================================================================
+if ($action === 'github_unlink') {
+    $pdo->prepare("UPDATE resources SET content_link = '', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+        ->execute([$resource['id']]);
+
+    echo json_encode([
+        'success' => true,
+        'github_config' => null,
     ]);
     exit;
 }
