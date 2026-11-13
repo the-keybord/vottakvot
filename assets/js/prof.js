@@ -575,6 +575,107 @@ function generateNewEditCode() {
 }
 
 /**
+ * Helper to get current local date & time in YYYY-MM-DDTHH:mm format
+ */
+function getTodayLocalISOString() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+/**
+ * Open Quick Edit Creation Date Modal (defaults to today)
+ */
+function openEditDateModal(id, code, currentDate) {
+    const idInput = document.getElementById('editDateResourceId');
+    if (idInput) idInput.value = id;
+
+    const codeLabel = document.getElementById('editDateResourceCode');
+    if (codeLabel) codeLabel.innerText = code || '...';
+
+    const dateInput = document.getElementById('inputResourceDate');
+    if (dateInput) {
+        // User requested: "defaulting to today"
+        dateInput.value = getTodayLocalISOString();
+    }
+
+    openModal('editDateModal');
+}
+
+/**
+ * Reset date input in date modal to Today (Now)
+ */
+function setEditDateToToday() {
+    const dateInput = document.getElementById('inputResourceDate');
+    if (dateInput) {
+        dateInput.value = getTodayLocalISOString();
+    }
+}
+
+/**
+ * Handle submission of creation date change
+ */
+async function handleDateSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('editDateResourceId').value;
+    const dateInput = document.getElementById('inputResourceDate');
+    const dateVal = dateInput ? dateInput.value : '';
+
+    if (!id || !dateVal) {
+        showToast('Please select a valid date', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveResourceDate');
+    const origText = btn ? btn.innerText : 'Save Date';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
+    }
+
+    try {
+        const res = await fetch('/api/resources.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_created_at',
+                id: id,
+                created_at: dateVal
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Creation date updated!', 'success');
+            closeModal('editDateModal');
+
+            // Update row data attribute and button display text
+            const row = document.getElementById(`resource-row-${id}`);
+            if (row) {
+                row.setAttribute('data-created', data.created_at);
+            }
+            const btnDate = document.getElementById(`btn-date-${id}`);
+            if (btnDate) {
+                btnDate.innerHTML = `<span>📅 ${data.formatted}</span><span style="font-size: 0.65rem; opacity: 0.7;">✏️</span>`;
+            }
+
+            // Re-sort table immediately if current view is sorted by newest/oldest
+            if (typeof filterAndSortResources === 'function') {
+                filterAndSortResources();
+            }
+        } else {
+            showToast(data.error || 'Failed to update date', 'error');
+        }
+    } catch (err) {
+        showToast('Network error while updating date', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = origText;
+        }
+    }
+}
+
+/**
  * Open Edit Modal
  */
 function openEditModal(resource) {

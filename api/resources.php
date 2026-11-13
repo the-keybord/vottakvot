@@ -317,6 +317,50 @@ if ($action === 'update') {
     exit;
 }
 
+if ($action === 'update_created_at') {
+    if (!is_logged_in()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        exit;
+    }
+
+    $userId = $_SESSION['tiktak_user_id'] ?? '';
+    $id = trim((string)($input['id'] ?? ''));
+    $createdAtInput = trim((string)($input['created_at'] ?? ''));
+
+    if (empty($id)) {
+        echo json_encode(['success' => false, 'error' => 'Invalid ID']);
+        exit;
+    }
+
+    $time = !empty($createdAtInput) ? strtotime($createdAtInput) : time();
+    if (!$time) {
+        $time = time();
+    }
+    $newCreatedAt = date('Y-m-d H:i:s', $time);
+
+    // Verify ownership
+    $existingStmt = $pdo->prepare("SELECT id FROM resources WHERE id = ? AND user_id = ? LIMIT 1");
+    $existingStmt->execute([$id, $userId]);
+    if (!$existingStmt->fetch()) {
+        echo json_encode(['success' => false, 'error' => 'Resource not found or access denied']);
+        exit;
+    }
+
+    // Update created_at in database
+    $update = $pdo->prepare("UPDATE resources SET created_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
+    $update->execute([$newCreatedAt, $id, $userId]);
+
+    echo json_encode([
+        'success' => true,
+        'created_at' => $newCreatedAt,
+        'formatted' => date('Y-m-d H:i', $time),
+        'date_only' => date('Y-m-d', $time),
+        'time_only' => date('H:i', $time)
+    ]);
+    exit;
+}
+
 if ($action === 'delete') {
     if (!is_logged_in()) {
         http_response_code(401);

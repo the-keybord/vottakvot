@@ -240,9 +240,8 @@ $baseUrl = get_base_url();
                                 <th>Type</th>
                                 <th>Title / Preview</th>
                                 <th>Status / Expiry</th>
-                                <th>Created At</th>
                                 <th>Visits</th>
-                                <th style="text-align: right;">Actions</th>
+                                <th style="text-align: right; white-space: nowrap; width: 1%;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -309,8 +308,24 @@ $baseUrl = get_base_url();
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <div style="font-weight: 600; color: var(--text-main); margin-bottom: 0.2rem;">
+                                        <div style="font-weight: 600; color: var(--text-main); margin-bottom: 0.15rem;">
                                             <?= htmlspecialchars($r['title'] ?: 'Untitled') ?>
+                                        </div>
+                                        <?php 
+                                            $cRaw = $r['created_at'] ?? '';
+                                            $cTime = !empty($cRaw) ? strtotime($cRaw) : false;
+                                            $cDisplay = $cTime ? date('Y-m-d H:i', $cTime) : '2022-01-01 00:00';
+                                        ?>
+                                        <div style="margin-bottom: 0.35rem;">
+                                            <button type="button" 
+                                                    id="btn-date-<?= $r['id'] ?>"
+                                                    class="btn-date-inline"
+                                                    onclick="openEditDateModal('<?= $r['id'] ?>', '<?= htmlspecialchars($r['code']) ?>', '<?= htmlspecialchars($r['created_at']) ?>')" 
+                                                    title="Click to change creation date" 
+                                                    style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.1rem 0.4rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-dim); font-size: 0.74rem; font-family: var(--font-mono); transition: all 0.15s ease;">
+                                                <span>📅 <?= $cDisplay ?></span>
+                                                <span style="font-size: 0.65rem; opacity: 0.7;">✏️</span>
+                                            </button>
                                         </div>
                                         <div style="font-size: 0.82rem; color: var(--text-muted); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                             <?= htmlspecialchars($preview) ?>
@@ -330,35 +345,23 @@ $baseUrl = get_base_url();
                                         </div>
                                     </td>
                                     <td>
-                                        <?php 
-                                            $cRaw = $r['created_at'] ?? '';
-                                            $cTime = !empty($cRaw) ? strtotime($cRaw) : false;
-                                        ?>
-                                        <div style="font-size: 0.84rem; font-weight: 500; color: var(--text-main); white-space: nowrap;">
-                                            <?= $cTime ? date('Y-m-d', $cTime) : '2022-01-01' ?>
-                                        </div>
-                                        <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.15rem; white-space: nowrap;">
-                                            <?= $cTime ? date('H:i', $cTime) : '00:00' ?>
-                                        </div>
-                                    </td>
-                                    <td>
                                         <span style="font-family: var(--font-mono); font-weight: 600;"><?= number_format($r['visits_count']) ?></span>
                                     </td>
 
-                                    <td style="text-align: right;">
-                                        <div style="display: inline-flex; gap: 0.4rem;">
+                                    <td style="text-align: right; white-space: nowrap; width: 1%;">
+                                        <div style="display: inline-flex; gap: 0.4rem; align-items: center; justify-content: flex-end; flex-wrap: nowrap; white-space: nowrap;">
                                             <?php if ($r['type'] === 'hosting'): ?>
-                                                <button class="btn btn-primary btn-sm" onclick="openSiteManager('<?= $r['code'] ?>', '<?= htmlspecialchars(addslashes($r['title'])) ?>')" title="Manage Hosted Web Directory & Files">
+                                                <button class="btn btn-primary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="openSiteManager('<?= $r['code'] ?>', '<?= htmlspecialchars(addslashes($r['title'])) ?>')" title="Manage Hosted Web Directory & Files">
                                                     ⚙️ Manage Site
                                                 </button>
                                             <?php endif; ?>
-                                            <button class="btn btn-secondary btn-sm" onclick="showQrCode('<?= $r['code'] ?>', '<?= $fullUrl ?>')" title="Show QR Code for Classroom">
+                                            <button class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="showQrCode('<?= $r['code'] ?>', '<?= $fullUrl ?>')" title="Show QR Code for Classroom">
                                                 QR
                                             </button>
-                                            <button class="btn btn-secondary btn-sm" onclick='openEditModal(<?= json_encode($r, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' title="Edit Material">
+                                            <button class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick='openEditModal(<?= json_encode($r, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' title="Edit Material">
                                                 Edit
                                             </button>
-                                            <button class="btn btn-danger btn-sm" onclick="deleteResource('<?= $r['id'] ?>', '<?= $r['code'] ?>')" title="Delete Code">
+                                            <button class="btn btn-danger btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="deleteResource('<?= $r['id'] ?>', '<?= $r['code'] ?>')" title="Delete Code">
                                                 ✕
                                             </button>
                                         </div>
@@ -637,6 +640,37 @@ $baseUrl = get_base_url();
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Creation Date Modal -->
+    <div id="editDateModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width: 420px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="font-size: 1.15rem;">Edit Creation Date</h2>
+                <button class="modal-close" onclick="closeModal('editDateModal')">&times;</button>
+            </div>
+            <form onsubmit="handleDateSubmit(event)">
+                <input type="hidden" id="editDateResourceId">
+                <div class="modal-body" style="display: grid; gap: 1rem;">
+                    <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.45;">
+                        Update creation date for <strong id="editDateResourceCode" style="color: var(--accent-cyan); font-family: var(--font-mono);">...</strong>. This controls sorting by newest/oldest on your dashboard.
+                    </p>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="inputResourceDate" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <span>Creation Date &amp; Time</span>
+                            <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.74rem;" onclick="setEditDateToToday()">
+                                📅 Today (Now)
+                            </button>
+                        </label>
+                        <input type="datetime-local" id="inputResourceDate" class="form-control" required style="font-family: var(--font-mono);">
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('editDateModal')">Cancel</button>
+                    <button type="submit" id="btnSaveResourceDate" class="btn btn-primary btn-sm">Save Date</button>
                 </div>
             </form>
         </div>

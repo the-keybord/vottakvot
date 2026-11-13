@@ -320,6 +320,22 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
+        // 8b. UPDATE resources SET created_at = ?, updated_at = ... WHERE id = ? AND user_id = ?
+        // -------------------------------------------------------------
+        if (preg_match('/UPDATE resources SET created_at = \?/i', $sql)) {
+            $createdAt = $params[0] ?? date('Y-m-d H:i:s');
+            $id = $params[1] ?? '';
+            $rec = $this->pb->getRecord($this->col('resources'), $id);
+            if ($rec) {
+                $this->pb->update($this->col('resources'), $rec['id'], [
+                    'created_at' => $createdAt,
+                ]);
+                $this->affectedRows = 1;
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------
         // 9. UPDATE resources SET visits_count = visits_count + 1 WHERE id = ?
         // -------------------------------------------------------------
         if (preg_match('/UPDATE resources SET visits_count = visits_count \+ 1 WHERE id = \?/i', $sql)) {
