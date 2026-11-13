@@ -46,6 +46,11 @@
         "name": "expires_at",
         "type": "date",
         "required": false
+      },
+      {
+        "name": "created_at",
+        "type": "text",
+        "required": false
       }
     ],
     "indexes": [

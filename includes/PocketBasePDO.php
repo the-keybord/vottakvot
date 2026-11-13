@@ -191,7 +191,9 @@ class PocketBaseStatement {
             $this->results = array_map([$this, 'normalizeResourceRecord'], $records);
             // Sort in PHP memory: latest created first
             usort($this->results, function($a, $b) {
-                $c = strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
+                $dateA = $a['created_at'] ?? '2022-01-01 00:00:00';
+                $dateB = $b['created_at'] ?? '2022-01-01 00:00:00';
+                $c = strcmp($dateB, $dateA);
                 if ($c !== 0) return $c;
                 return strcmp($b['id'] ?? '', $a['id'] ?? '');
             });
@@ -257,6 +259,7 @@ class PocketBaseStatement {
                 'content_link' => $params[4] ?? '',
                 'content_text' => $params[5] ?? '',
                 'visits_count' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
             ];
             if (!empty($params[6])) {
                 $data['expires_at'] = date('Y-m-d H:i:s.000\Z', strtotime($params[6]));
@@ -675,8 +678,10 @@ class PocketBaseStatement {
             'content_text' => $rec['content_text'] ?? '',
             'visits_count' => (int)($rec['visits_count'] ?? 0),
             'expires_at' => $rec['expires_at'] ?? null,
-            'created_at' => !empty($rec['created_at']) ? $rec['created_at'] : ($rec['created'] ?? date('Y-m-d H:i:s')),
-            'updated_at' => !empty($rec['updated_at']) ? $rec['updated_at'] : ($rec['updated'] ?? date('Y-m-d H:i:s')),
+            'created_at' => (!empty($rec['created_at']) && $rec['created_at'] !== 'NULL')
+                ? $rec['created_at']
+                : (!empty($rec['created']) ? $rec['created'] : '2022-01-01 00:00:00'),
+            'updated_at' => !empty($rec['updated_at']) ? $rec['updated_at'] : ($rec['updated'] ?? '2022-01-01 00:00:00'),
         ];
     }
 

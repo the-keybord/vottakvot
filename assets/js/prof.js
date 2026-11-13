@@ -788,14 +788,14 @@ function applyResourceFiltersAndSort() {
     // 2. Sort rows based on currentSortBy
     rows.sort((a, b) => {
         if (currentSortBy === 'newest') {
-            const dateA = a.getAttribute('data-created') || '';
-            const dateB = b.getAttribute('data-created') || '';
+            const dateA = a.getAttribute('data-created') || '2022-01-01 00:00:00';
+            const dateB = b.getAttribute('data-created') || '2022-01-01 00:00:00';
             const cmp = dateB.localeCompare(dateA);
             if (cmp !== 0) return cmp;
             return (parseInt(a.getAttribute('data-order')) || 0) - (parseInt(b.getAttribute('data-order')) || 0);
         } else if (currentSortBy === 'oldest') {
-            const dateA = a.getAttribute('data-created') || '';
-            const dateB = b.getAttribute('data-created') || '';
+            const dateA = a.getAttribute('data-created') || '2022-01-01 00:00:00';
+            const dateB = b.getAttribute('data-created') || '2022-01-01 00:00:00';
             const cmp = dateA.localeCompare(dateB);
             if (cmp !== 0) return cmp;
             return (parseInt(b.getAttribute('data-order')) || 0) - (parseInt(a.getAttribute('data-order')) || 0);
