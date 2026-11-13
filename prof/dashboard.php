@@ -240,6 +240,7 @@ $baseUrl = get_base_url();
                                 <th>Type</th>
                                 <th>Title / Preview</th>
                                 <th>Status / Expiry</th>
+                                <th>Created At</th>
                                 <th>Visits</th>
                                 <th style="text-align: right;">Actions</th>
                             </tr>
@@ -326,6 +327,18 @@ $baseUrl = get_base_url();
                                                     <span>+2 Hours</span>
                                                 </button>
                                             <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                            $cRaw = $r['created_at'] ?? '';
+                                            $cTime = !empty($cRaw) ? strtotime($cRaw) : false;
+                                        ?>
+                                        <div style="font-size: 0.84rem; font-weight: 500; color: var(--text-main); white-space: nowrap;">
+                                            <?= $cTime ? date('Y-m-d', $cTime) : '2022-01-01' ?>
+                                        </div>
+                                        <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.15rem; white-space: nowrap;">
+                                            <?= $cTime ? date('H:i', $cTime) : '00:00' ?>
                                         </div>
                                     </td>
                                     <td>
