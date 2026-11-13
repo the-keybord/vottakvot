@@ -382,7 +382,7 @@ $baseUrl = get_base_url();
                 <h2 class="modal-title">Create New Resource</h2>
                 <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
             </div>
-            <form id="resourceForm">
+            <form id="resourceForm" autocomplete="off">
                 <div class="modal-body">
                     <!-- Type Selection Tabs (5 Options) -->
                     <label class="form-label">Resource Type</label>
@@ -420,6 +420,8 @@ $baseUrl = get_base_url();
                                 class="form-control" 
                                 style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;"
                                 maxlength="6" 
+                                placeholder="e.g. CS101 or click 🎲 Random"
+                                autocomplete="off"
                                 required
                             >
                             <button type="button" id="btnGenerateCode" class="btn btn-secondary" title="Randomize 6-letter code">
@@ -432,19 +434,19 @@ $baseUrl = get_base_url();
                     <!-- Title -->
                     <div class="form-group">
                         <label class="form-label" for="inputTitle">Title / Reference Label</label>
-                        <input type="text" id="inputTitle" name="title" class="form-control" placeholder="e.g. Week 4 Lecture Slides, Web Quiz, or Submissions">
+                        <input type="text" id="inputTitle" name="title" class="form-control" placeholder="e.g. Week 4 Lecture Slides, Web Quiz, or Submissions" autocomplete="off">
                     </div>
 
                     <!-- Redirect URL Field -->
                     <div id="fieldRedirectLink" class="form-group">
                         <label class="form-label" for="inputLink">Destination Link (URL)</label>
-                        <input type="url" id="inputLink" name="link" class="form-control" placeholder="https://drive.google.com/... or https://classroom.google.com/..." required>
+                        <input type="url" id="inputLink" name="link" class="form-control" placeholder="https://drive.google.com/... or https://classroom.google.com/..." autocomplete="off" required>
                     </div>
 
                     <!-- Shared Text Field -->
                     <div id="fieldTextContent" class="form-group" style="display: none;">
                         <label class="form-label" for="inputText">Shared Text Content (Dontpad Style)</label>
-                        <textarea id="inputText" name="text" class="form-control" placeholder="Type or paste student instructions, code snippets, notes..."></textarea>
+                        <textarea id="inputText" name="text" class="form-control" placeholder="Type or paste student instructions, code snippets, notes..." autocomplete="off"></textarea>
                     </div>
 
                     <!-- File Console Info Notice -->
@@ -489,6 +491,7 @@ $baseUrl = get_base_url();
                                     rows="9" 
                                     spellcheck="false" 
                                     placeholder="Type or paste your index.php code here..."
+                                    autocomplete="off"
                                 ></textarea>
                             </div>
 
@@ -500,21 +503,21 @@ $baseUrl = get_base_url();
                                 <div id="createGithubFieldsContainer" style="display: none; margin-top: 0.85rem; gap: 0.65rem;">
                                     <div>
                                         <label class="form-label" for="inputGithubRepo" style="font-size: 0.8rem;">GitHub Repo URL or <code>owner/repo</code></label>
-                                        <input type="text" id="inputGithubRepo" class="form-control" placeholder="e.g. https://github.com/username/my-site or username/my-site">
+                                        <input type="text" id="inputGithubRepo" class="form-control" placeholder="e.g. https://github.com/username/my-site or username/my-site" autocomplete="off">
                                     </div>
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
                                         <div>
                                             <label class="form-label" for="inputGithubBranch" style="font-size: 0.8rem;">Branch</label>
-                                            <input type="text" id="inputGithubBranch" class="form-control" placeholder="main" value="main">
+                                            <input type="text" id="inputGithubBranch" class="form-control" placeholder="main" autocomplete="off">
                                         </div>
                                         <div>
                                             <label class="form-label" for="inputGithubSubdir" style="font-size: 0.8rem;">Subfolder (Optional)</label>
-                                            <input type="text" id="inputGithubSubdir" class="form-control" placeholder="e.g. dist or labs/week1">
+                                            <input type="text" id="inputGithubSubdir" class="form-control" placeholder="e.g. dist or labs/week1" autocomplete="off">
                                         </div>
                                     </div>
                                     <div>
                                         <label class="form-label" for="inputGithubToken" style="font-size: 0.8rem;">GitHub Token (Optional, for private repos)</label>
-                                        <input type="password" id="inputGithubToken" class="form-control" placeholder="ghp_... or github_pat_..." autocomplete="off">
+                                        <input type="password" id="inputGithubToken" class="form-control" placeholder="ghp_... or github_pat_..." autocomplete="new-password">
                                     </div>
                                 </div>
                             </div>
@@ -577,7 +580,7 @@ $baseUrl = get_base_url();
                 <h2 class="modal-title">Edit Resource</h2>
                 <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
             </div>
-            <form onsubmit="handleEditSubmit(event)">
+            <form onsubmit="handleEditSubmit(event)" autocomplete="off">
                 <input type="hidden" id="editId">
                 <input type="hidden" id="editType">
                 <div class="modal-body">
@@ -586,22 +589,22 @@ $baseUrl = get_base_url();
                             <span>Access Code (3-10 chars)</span>
                             <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;" onclick="generateNewEditCode()">🎲 Randomize</button>
                         </label>
-                        <input type="text" id="editCode" class="form-control" maxlength="10" style="font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;" required>
+                        <input type="text" id="editCode" class="form-control" maxlength="10" style="font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;" autocomplete="off" required>
                         <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
                             Changing the code renames the access URL and automatically moves any micro-host files.
                         </span>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="editTitle">Title</label>
-                        <input type="text" id="editTitle" class="form-control" required>
+                        <input type="text" id="editTitle" class="form-control" autocomplete="off" required>
                     </div>
                     <div id="editFieldLink" class="form-group">
                         <label class="form-label" for="editInputLink">Destination URL</label>
-                        <input type="url" id="editInputLink" class="form-control">
+                        <input type="url" id="editInputLink" class="form-control" autocomplete="off">
                     </div>
                     <div id="editFieldText" class="form-group">
                         <label class="form-label" for="editInputText">Text Note Content</label>
-                        <textarea id="editInputText" class="form-control"></textarea>
+                        <textarea id="editInputText" class="form-control" autocomplete="off"></textarea>
                     </div>
                     <div id="editFieldFiles" class="form-group" style="display: none;">
                         <p style="font-size: 0.88rem; color: var(--text-muted); background: var(--bg-glass); padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
@@ -652,7 +655,7 @@ $baseUrl = get_base_url();
                 <h2 class="modal-title" style="font-size: 1.15rem;">Edit Creation Date</h2>
                 <button class="modal-close" onclick="closeModal('editDateModal')">&times;</button>
             </div>
-            <form onsubmit="handleDateSubmit(event)">
+            <form onsubmit="handleDateSubmit(event)" autocomplete="off">
                 <input type="hidden" id="editDateResourceId">
                 <div class="modal-body" style="display: grid; gap: 1rem;">
                     <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0; line-height: 1.45;">
@@ -665,7 +668,7 @@ $baseUrl = get_base_url();
                                 📅 Today (Now)
                             </button>
                         </label>
-                        <input type="datetime-local" id="inputResourceDate" class="form-control" required style="font-family: var(--font-mono);">
+                        <input type="datetime-local" id="inputResourceDate" class="form-control" autocomplete="off" required style="font-family: var(--font-mono);">
                     </div>
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
@@ -865,21 +868,21 @@ $baseUrl = get_base_url();
                                 </label>
                             </div>
 
-                            <form id="siteGithubForm" onsubmit="saveGithubLinkConfig(event)" style="display: grid; gap: 0.9rem;">
+                            <form id="siteGithubForm" onsubmit="saveGithubLinkConfig(event)" autocomplete="off" style="display: grid; gap: 0.9rem;">
                                 <div id="siteGhFieldsWrapper" style="display: grid; gap: 0.9rem;">
                                     <div class="form-group" style="margin: 0;">
                                         <label class="form-label" for="siteGhRepo">Repository URL or <code>owner/repo</code></label>
-                                        <input type="text" id="siteGhRepo" class="form-control" placeholder="https://github.com/username/repo or username/repo" required>
+                                        <input type="text" id="siteGhRepo" class="form-control" placeholder="https://github.com/username/repo or username/repo" autocomplete="off" required>
                                     </div>
 
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
                                         <div class="form-group" style="margin: 0;">
                                             <label class="form-label" for="siteGhBranch">Branch</label>
-                                            <input type="text" id="siteGhBranch" class="form-control" placeholder="main" value="main">
+                                            <input type="text" id="siteGhBranch" class="form-control" placeholder="main" autocomplete="off">
                                         </div>
                                         <div class="form-group" style="margin: 0;">
                                             <label class="form-label" for="siteGhSubdir">Subfolder (Optional)</label>
-                                            <input type="text" id="siteGhSubdir" class="form-control" placeholder="Leave blank for whole repo, e.g. dist">
+                                            <input type="text" id="siteGhSubdir" class="form-control" placeholder="Leave blank for whole repo, e.g. dist" autocomplete="off">
                                         </div>
                                     </div>
 
@@ -888,7 +891,7 @@ $baseUrl = get_base_url();
                                             <span>GitHub Token (Optional, for private repos)</span>
                                             <span id="siteGhTokenStatus" style="font-size: 0.76rem; color: #10b981; font-weight: 600; display: none;">● Token saved</span>
                                         </label>
-                                        <input type="password" id="siteGhToken" class="form-control" placeholder="Leave blank to keep existing token or for public repos" autocomplete="off">
+                                        <input type="password" id="siteGhToken" class="form-control" placeholder="Leave blank to keep existing token or for public repos" autocomplete="new-password">
                                         <label id="siteGhClearTokenLabel" style="display: none; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
                                             <input type="checkbox" id="siteGhClearToken"> Remove saved token
                                         </label>

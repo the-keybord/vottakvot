@@ -91,11 +91,6 @@ function initResourceForm() {
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 updateNoticeCodes();
-                // Set default template if empty
-                const hostingCodeInput = document.getElementById('inputHostingCode');
-                if (hostingCodeInput && !hostingCodeInput.value.trim()) {
-                    applySiteTemplate('starter');
-                }
             }
         });
     });
@@ -384,7 +379,25 @@ function openModal(modalId) {
     if (modal) {
         modal.classList.add('active');
         if (modalId === 'createModal') {
-            generateNewCode();
+            const form = document.getElementById('resourceForm');
+            if (form) form.reset();
+
+            const codeInput = document.getElementById('inputCode');
+            if (codeInput) codeInput.value = '';
+            updateNoticeCodes();
+
+            const titleInput = document.getElementById('inputTitle');
+            if (titleInput) titleInput.value = '';
+
+            const linkInput = document.getElementById('inputLink');
+            if (linkInput) linkInput.value = '';
+
+            const textInput = document.getElementById('inputText');
+            if (textInput) textInput.value = '';
+
+            const hostingInput = document.getElementById('inputHostingCode');
+            if (hostingInput) hostingInput.value = '';
+
             const ghToggle = document.getElementById('inputEnableGithubSync');
             if (ghToggle) {
                 ghToggle.checked = false;
@@ -394,11 +407,36 @@ function openModal(modalId) {
             const ghRepo = document.getElementById('inputGithubRepo');
             if (ghRepo) ghRepo.value = '';
             const ghBranch = document.getElementById('inputGithubBranch');
-            if (ghBranch) ghBranch.value = 'main';
+            if (ghBranch) ghBranch.value = '';
             const ghSubdir = document.getElementById('inputGithubSubdir');
             if (ghSubdir) ghSubdir.value = '';
             const ghToken = document.getElementById('inputGithubToken');
             if (ghToken) ghToken.value = '';
+
+            const customDateContainer = document.getElementById('customExpiryContainer');
+            if (customDateContainer) customDateContainer.style.display = 'none';
+
+            // Reset type tab to default (redirect)
+            const typeTabs = document.querySelectorAll('.type-tab');
+            typeTabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-type') === 'redirect'));
+            currentResourceType = 'redirect';
+            const linkField = document.getElementById('fieldRedirectLink');
+            const textField = document.getElementById('fieldTextContent');
+            const filesField = document.getElementById('fieldFilesInfo');
+            const hostingField = document.getElementById('fieldHostingContent');
+            const linksField = document.getElementById('fieldLinksContent');
+            if (linkField) linkField.style.display = 'block';
+            if (textField) textField.style.display = 'none';
+            if (filesField) filesField.style.display = 'none';
+            if (hostingField) hostingField.style.display = 'none';
+            if (linksField) linksField.style.display = 'none';
+            if (linkInput) linkInput.required = true;
+            if (textInput) textInput.required = false;
+
+            // Reset expiry chips to never
+            const expiryChips = document.querySelectorAll('.expiry-chip');
+            expiryChips.forEach(c => c.classList.toggle('active', c.getAttribute('data-preset') === 'never'));
+            currentExpiryPreset = 'never';
         }
     }
 }
@@ -1361,7 +1399,7 @@ function switchSiteView(view) {
  * Create New File Prompt
  */
 async function promptNewFile() {
-    const filename = prompt('Enter new filename (e.g. style.css, about.php, app.js):', 'style.css');
+    const filename = prompt('Enter new filename (e.g. style.css, about.php, app.js):', '');
     if (!filename || !filename.trim()) return;
 
     try {
@@ -1397,7 +1435,7 @@ async function promptNewFile() {
  * Create New Folder Prompt
  */
 async function promptNewFolder() {
-    const folderName = prompt('Enter new folder name (e.g. css, js, assets):', 'assets');
+    const folderName = prompt('Enter new folder name (e.g. css, js, assets):', '');
     if (!folderName || !folderName.trim()) return;
 
     try {
