@@ -71,9 +71,10 @@ if ($action === 'create') {
         }
     } elseif ($type === 'hosting') {
         $siteDir = ensure_site_dir($code);
+        $ghEnabled = !empty($input['github_enabled']);
         $ghRepoInput = trim($input['github_repo'] ?? '');
 
-        if ($ghRepoInput !== '') {
+        if ($ghEnabled && $ghRepoInput !== '') {
             $ghBranch = trim($input['github_branch'] ?? '');
             $ghSubdir = trim($input['github_subdir'] ?? '');
             $ghToken = trim($input['github_token'] ?? '');
@@ -83,6 +84,8 @@ if ($action === 'create') {
                 echo json_encode(['success' => false, 'error' => 'Invalid GitHub repository URL or owner/repo format.']);
                 exit;
             }
+            $ghConfig['enabled'] = true;
+            $ghConfig['code'] = $code;
             if ($ghToken !== '') {
                 $ghConfig['token'] = $ghToken;
             }
@@ -210,6 +213,7 @@ if ($action === 'update') {
     $title = trim($input['title'] ?? '');
     $contentLink = trim($input['content_link'] ?? '');
     $contentText = trim($input['content_text'] ?? '');
+    $newCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', trim($input['code'] ?? '')));
 
     if (empty($id)) {
         echo json_encode(['success' => false, 'error' => 'Invalid ID']);
@@ -224,9 +228,54 @@ if ($action === 'update') {
         exit;
     }
 
+    $oldCode = $existingRes['code'];
+    $finalCode = $oldCode;
+
+    // Handle code change if requested
+    if ($newCode !== '' && $newCode !== $oldCode) {
+        if (strlen($newCode) < 3 || strlen($newCode) > 10) {
+            echo json_encode(['success' => false, 'error' => 'Access code must be between 3 and 10 alphanumeric characters.']);
+            exit;
+        }
+
+        // Check if new code is already in use
+        $check = $pdo->prepare("SELECT id FROM resources WHERE code = ? AND id != ? LIMIT 1");
+        $check->execute([$newCode, $id]);
+        if ($check->fetch()) {
+            echo json_encode(['success' => false, 'error' => "Access code '{$newCode}' is already taken by another resource."]);
+            exit;
+        }
+
+        $finalCode = $newCode;
+
+        // If hosting, rename site directory on disk
+        if (($existingRes['type'] ?? '') === 'hosting') {
+            $renameOk = rename_site_directory($oldCode, $newCode);
+            if (!$renameOk) {
+                echo json_encode(['success' => false, 'error' => "Failed to rename site folder on disk from '{$oldCode}' to '{$newCode}'."]);
+                exit;
+            }
+        }
+
+        // If files, update code in resource_files table
+        if (($existingRes['type'] ?? '') === 'files') {
+            try {
+                $pdo->prepare("UPDATE resource_files SET code = ? WHERE resource_id = ?")->execute([$newCode, $id]);
+            } catch (\Throwable $e) {
+                // Ignore if files update encounters issues
+            }
+        }
+    }
+
     if (($existingRes['type'] ?? '') === 'hosting') {
-        // Preserve GitHub link config JSON stored in content_link
-        $contentLink = $existingRes['content_link'] ?? '';
+        // Preserve GitHub link config JSON stored in content_link, updating code inside it if code changed
+        $savedConfig = GithubSync::decodeConfig($existingRes['content_link'] ?? '');
+        if ($savedConfig) {
+            $savedConfig['code'] = $finalCode;
+            $contentLink = json_encode($savedConfig, JSON_UNESCAPED_SLASHES);
+        } else {
+            $contentLink = $existingRes['content_link'] ?? '';
+        }
     } elseif (!empty($contentLink) && !preg_match('~^https?://~i', $contentLink)) {
         $contentLink = 'https://' . $contentLink;
     }
@@ -256,10 +305,15 @@ if ($action === 'update') {
     }
 
     // Only allow updating own resources
-    $update = $pdo->prepare("UPDATE resources SET title = ?, content_link = ?, content_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
-    $update->execute([$title, $contentLink, $contentText, $id, $userId]);
+    $update = $pdo->prepare("UPDATE resources SET code = ?, title = ?, content_link = ?, content_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
+    $update->execute([$finalCode, $title, $contentLink, $contentText, $id, $userId]);
 
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true,
+        'code' => $finalCode,
+        'url' => get_base_url() . '/code=' . $finalCode,
+        'site_url' => get_base_url() . '/sites/' . $finalCode . '/'
+    ]);
     exit;
 }
 

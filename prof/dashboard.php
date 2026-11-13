@@ -476,11 +476,12 @@ $baseUrl = get_base_url();
                                 ></textarea>
                             </div>
 
-                            <details style="margin-top: 0.85rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.65rem 0.85rem;">
-                                <summary style="cursor: pointer; font-size: 0.86rem; font-weight: 600; color: var(--accent-cyan); user-select: none;">
-                                    🔗 Or Link a GitHub Repository (Optional)
-                                </summary>
-                                <div style="margin-top: 0.75rem; display: grid; gap: 0.65rem;">
+                            <div style="margin-top: 0.85rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem 0.95rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--accent-cyan); user-select: none;">
+                                    <input type="checkbox" id="inputEnableGithubSync" onchange="document.getElementById('createGithubFieldsContainer').style.display = this.checked ? 'grid' : 'none'">
+                                    <span>🐙 Enable GitHub Sync (Optional)</span>
+                                </label>
+                                <div id="createGithubFieldsContainer" style="display: none; margin-top: 0.85rem; gap: 0.65rem;">
                                     <div>
                                         <label class="form-label" for="inputGithubRepo" style="font-size: 0.8rem;">GitHub Repo URL or <code>owner/repo</code></label>
                                         <input type="text" id="inputGithubRepo" class="form-control" placeholder="e.g. https://github.com/username/my-site or username/my-site">
@@ -500,7 +501,7 @@ $baseUrl = get_base_url();
                                         <input type="password" id="inputGithubToken" class="form-control" placeholder="ghp_... or github_pat_..." autocomplete="off">
                                     </div>
                                 </div>
-                            </details>
+                            </div>
                         </div>
                     </div>
 
@@ -565,8 +566,14 @@ $baseUrl = get_base_url();
                 <input type="hidden" id="editType">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label class="form-label">Access Code</label>
-                        <input type="text" id="editCode" class="form-control" disabled style="opacity: 0.7;">
+                        <label class="form-label" for="editCode" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Access Code (3-10 chars)</span>
+                            <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;" onclick="generateNewEditCode()">🎲 Randomize</button>
+                        </label>
+                        <input type="text" id="editCode" class="form-control" maxlength="10" style="font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;" required>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+                            Changing the code renames the access URL and automatically moves any micro-host files.
+                        </span>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="editTitle">Title</label>
@@ -640,6 +647,9 @@ $baseUrl = get_base_url();
                     </a>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="downloadSiteZip()" title="Download entire site as ZIP archive">
                         📦 Export ZIP
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllSiteFiles()" title="Delete all files in this micro-hosting directory">
+                        🗑️ Delete All Files
                     </button>
                     <button class="modal-close" onclick="closeModal('siteManagerModal')">&times;</button>
                 </div>
@@ -734,6 +744,7 @@ $baseUrl = get_base_url();
                                 <div style="display: flex; gap: 0.4rem;">
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="promptNewFile()">+ New File</button>
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="promptNewFolder()">+ New Folder</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAllSiteFiles()" title="Delete all files in this site">🗑️ Delete All</button>
                                 </div>
                             </div>
                             <table class="resources-table site-table">
@@ -792,37 +803,54 @@ $baseUrl = get_base_url();
                                 <span id="ghLastSyncedBadge" class="badge badge-secondary" style="font-size: 0.78rem; display: none;"></span>
                             </div>
 
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem 1rem; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 1.15rem;">
+                                <div>
+                                    <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                                        <span>Enable GitHub Sync</span>
+                                        <span id="siteGhEnabledBadge" class="badge badge-secondary" style="font-size: 0.72rem;">DISABLED</span>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                        Explicit isolation toggle. When turned OFF, this micro-host will never pull from GitHub or accept webhooks.
+                                    </div>
+                                </div>
+                                <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none; font-weight: 600;">
+                                    <input type="checkbox" id="siteGhEnabledToggle" onchange="toggleSiteGithubActive(this.checked)" style="transform: scale(1.35); cursor: pointer;">
+                                </label>
+                            </div>
+
                             <form id="siteGithubForm" onsubmit="saveGithubLinkConfig(event)" style="display: grid; gap: 0.9rem;">
-                                <div class="form-group" style="margin: 0;">
-                                    <label class="form-label" for="siteGhRepo">Repository URL or <code>owner/repo</code></label>
-                                    <input type="text" id="siteGhRepo" class="form-control" placeholder="https://github.com/username/repo or username/repo" required>
-                                </div>
-
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                                <div id="siteGhFieldsWrapper" style="display: grid; gap: 0.9rem;">
                                     <div class="form-group" style="margin: 0;">
-                                        <label class="form-label" for="siteGhBranch">Branch</label>
-                                        <input type="text" id="siteGhBranch" class="form-control" placeholder="main" value="main">
+                                        <label class="form-label" for="siteGhRepo">Repository URL or <code>owner/repo</code></label>
+                                        <input type="text" id="siteGhRepo" class="form-control" placeholder="https://github.com/username/repo or username/repo" required>
                                     </div>
-                                    <div class="form-group" style="margin: 0;">
-                                        <label class="form-label" for="siteGhSubdir">Subfolder (Optional)</label>
-                                        <input type="text" id="siteGhSubdir" class="form-control" placeholder="Leave blank for whole repo, e.g. dist">
-                                    </div>
-                                </div>
 
-                                <div class="form-group" style="margin: 0;">
-                                    <label class="form-label" for="siteGhToken" style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span>GitHub Token (Optional, for private repos)</span>
-                                        <span id="siteGhTokenStatus" style="font-size: 0.76rem; color: #10b981; font-weight: 600; display: none;">● Token saved</span>
-                                    </label>
-                                    <input type="password" id="siteGhToken" class="form-control" placeholder="Leave blank to keep existing token or for public repos" autocomplete="off">
-                                    <label id="siteGhClearTokenLabel" style="display: none; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
-                                        <input type="checkbox" id="siteGhClearToken"> Remove saved token
-                                    </label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label class="form-label" for="siteGhBranch">Branch</label>
+                                            <input type="text" id="siteGhBranch" class="form-control" placeholder="main" value="main">
+                                        </div>
+                                        <div class="form-group" style="margin: 0;">
+                                            <label class="form-label" for="siteGhSubdir">Subfolder (Optional)</label>
+                                            <input type="text" id="siteGhSubdir" class="form-control" placeholder="Leave blank for whole repo, e.g. dist">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin: 0;">
+                                        <label class="form-label" for="siteGhToken" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span>GitHub Token (Optional, for private repos)</span>
+                                            <span id="siteGhTokenStatus" style="font-size: 0.76rem; color: #10b981; font-weight: 600; display: none;">● Token saved</span>
+                                        </label>
+                                        <input type="password" id="siteGhToken" class="form-control" placeholder="Leave blank to keep existing token or for public repos" autocomplete="off">
+                                        <label id="siteGhClearTokenLabel" style="display: none; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+                                            <input type="checkbox" id="siteGhClearToken"> Remove saved token
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center; margin-top: 0.25rem;">
                                     <button type="submit" id="btnSaveAndSyncGh" class="btn btn-primary btn-sm">
-                                        💾 Save &amp; Pull Now
+                                        💾 Save Settings
                                     </button>
                                     <button type="button" id="btnPullGhOnly" class="btn btn-secondary btn-sm" onclick="syncSiteFromGithub()" style="display: none;">
                                         🔄 Pull Latest Now

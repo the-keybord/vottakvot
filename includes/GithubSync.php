@@ -65,6 +65,9 @@ class GithubSync {
         if (!is_array($data) || empty($data['owner']) || empty($data['repo'])) {
             return null;
         }
+        if (!isset($data['enabled'])) {
+            $data['enabled'] = true;
+        }
         return $data;
     }
 
@@ -76,6 +79,8 @@ class GithubSync {
             return null;
         }
         return [
+            'enabled' => !empty($config['enabled']),
+            'code' => $config['code'] ?? $code,
             'owner' => $config['owner'],
             'repo' => $config['repo'],
             'branch' => $config['branch'] ?? 'main',
@@ -118,6 +123,14 @@ class GithubSync {
         $targetBase = realpath($targetDir);
         if (!$targetBase) {
             return ['success' => false, 'error' => 'Target site directory is not accessible.'];
+        }
+
+        // Strict isolation check: Target must be a dedicated subdirectory of sites/
+        if (function_exists('get_sites_base_dir')) {
+            $baseDir = realpath(get_sites_base_dir());
+            if ($baseDir && ($targetBase === $baseDir || strpos($targetBase, $baseDir . DIRECTORY_SEPARATOR) !== 0)) {
+                return ['success' => false, 'error' => 'Security error: Sync target must be a dedicated subdirectory inside sites/.'];
+            }
         }
 
         $zipUrl = sprintf(

@@ -50,6 +50,18 @@ if (!$config) {
     exit;
 }
 
+if (empty($config['enabled'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'GitHub sync is disabled for this micro-host']);
+    exit;
+}
+
+if (!empty($config['code']) && $config['code'] !== $code) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Resource code mismatch in GitHub configuration']);
+    exit;
+}
+
 $secret = (string)($config['webhook_secret'] ?? '');
 if ($secret === '') {
     http_response_code(403);

@@ -310,6 +310,9 @@ function get_sites_base_dir(): string {
 
 function get_site_dir(string $code): string {
     $cleanCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $code));
+    if (empty($cleanCode) || strlen($cleanCode) < 3) {
+        throw new InvalidArgumentException("Invalid or empty site code: '{$code}'");
+    }
     return get_sites_base_dir() . DIRECTORY_SEPARATOR . $cleanCode;
 }
 
@@ -382,7 +385,11 @@ function safe_site_path(string $code, string $relativePath = ''): ?string {
  * Recursively delete a site directory
  */
 function delete_site_directory(string $code): bool {
-    $dir = get_site_dir($code);
+    try {
+        $dir = get_site_dir($code);
+    } catch (\Throwable $e) {
+        return false;
+    }
     if (!is_dir($dir)) {
         return true;
     }
@@ -397,6 +404,78 @@ function delete_site_directory(string $code): bool {
         }
     }
     return @rmdir($dir);
+}
+
+/**
+ * Delete all files and subdirectories inside a site, keeping the site folder itself.
+ */
+function empty_site_directory(string $code): bool {
+    try {
+        $dir = get_site_dir($code);
+    } catch (\Throwable $e) {
+        return false;
+    }
+    if (!is_dir($dir)) {
+        return true;
+    }
+
+    $baseReal = realpath(get_sites_base_dir());
+    $dirReal = realpath($dir);
+    if (!$dirReal || $dirReal === $baseReal || strpos($dirReal, $baseReal . DIRECTORY_SEPARATOR) !== 0) {
+        return false;
+    }
+
+    $it = new RecursiveDirectoryIterator($dirReal, RecursiveDirectoryIterator::SKIP_DOTS);
+    $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($files as $file) {
+        if ($file->isDir()) {
+            @rmdir($file->getRealPath());
+        } else {
+            @unlink($file->getRealPath());
+        }
+    }
+    return true;
+}
+
+/**
+ * Rename a site directory on disk from old code to new code.
+ */
+function rename_site_directory(string $oldCode, string $newCode): bool {
+    try {
+        $oldDir = get_site_dir($oldCode);
+        $newDir = get_site_dir($newCode);
+    } catch (\Throwable $e) {
+        return false;
+    }
+
+    if (!is_dir($oldDir)) {
+        return true; // No directory exists yet to rename
+    }
+
+    if ($oldDir === $newDir) {
+        return true;
+    }
+
+    if (is_dir($newDir)) {
+        // If target already exists, merge contents into newDir and remove oldDir
+        $it = new RecursiveDirectoryIterator($oldDir, RecursiveDirectoryIterator::SKIP_DOTS);
+        $files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::SELF_FIRST);
+        foreach ($files as $file) {
+            $subPath = substr($file->getRealPath(), strlen($oldDir) + 1);
+            $target = $newDir . DIRECTORY_SEPARATOR . $subPath;
+            if ($file->isDir()) {
+                if (!is_dir($target)) @mkdir($target, 0777, true);
+            } else {
+                $p = dirname($target);
+                if (!is_dir($p)) @mkdir($p, 0777, true);
+                @rename($file->getRealPath(), $target);
+            }
+        }
+        delete_site_directory($oldCode);
+        return true;
+    }
+
+    return @rename($oldDir, $newDir);
 }
 
 /**

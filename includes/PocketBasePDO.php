@@ -122,6 +122,29 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
+        // 2b. SELECT id FROM resources WHERE code = ? AND id != ? LIMIT 1
+        // -------------------------------------------------------------
+        if (preg_match('/SELECT id FROM resources WHERE code = \? AND id != \?/i', $sql)) {
+            $code = strtoupper(trim((string)($params[0] ?? '')));
+            $excludeId = (string)($params[1] ?? '');
+            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code=' . $this->q($code) . ' && id!=' . $this->q($excludeId));
+            if (!$rec && $this->pb->getLastHttpCode() !== 200) {
+                $all = $this->pb->getFullList($this->col('resources'));
+                foreach ($all as $item) {
+                    if (strtoupper($item['code'] ?? '') === $code && ($item['id'] ?? '') !== $excludeId) {
+                        $rec = $item;
+                        break;
+                    }
+                }
+            }
+            if ($rec) {
+                $this->results = [['id' => $rec['id']]];
+                $this->affectedRows = 1;
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------
         // 3. SELECT * FROM resources WHERE user_id = ? ORDER BY created_at DESC
         // -------------------------------------------------------------
         if (preg_match('/SELECT .* FROM resources WHERE user_id = \?/i', $sql)) {
@@ -247,22 +270,29 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
-        // 7. UPDATE resources SET title = ?, content_link = ?, content_text = ?, updated_at = ... WHERE id = ? AND user_id = ?
+        // 7. UPDATE resources SET (code = ?, )?title = ?, content_link = ?, content_text = ?, updated_at = ... WHERE id = ? AND user_id = ?
         // -------------------------------------------------------------
-        if (preg_match('/UPDATE resources SET title = \?, content_link = \?, content_text = \?/i', $sql)) {
-            $title = $params[0] ?? '';
-            $link = $params[1] ?? '';
-            $text = $params[2] ?? '';
-            $id = $params[3] ?? '';
-            $userId = $params[4] ?? '';
+        if (preg_match('/UPDATE resources SET (?:code = \?,\s*)?title = \?, content_link = \?, content_text = \?/i', $sql)) {
+            $hasCode = (stripos($sql, 'code = ?') !== false);
+            $idx = 0;
+            $codeVal = $hasCode ? strtoupper(trim((string)($params[$idx++] ?? ''))) : null;
+            $title = $params[$idx++] ?? '';
+            $link = $params[$idx++] ?? '';
+            $text = $params[$idx++] ?? '';
+            $id = $params[$idx++] ?? '';
+            $userId = $params[$idx++] ?? '';
 
             $rec = $this->pb->getRecord($this->col('resources'), $id);
             if ($rec) {
-                $this->pb->update($this->col('resources'), $rec['id'], [
+                $updateData = [
                     'title' => $title,
                     'content_link' => $link,
                     'content_text' => $text,
-                ]);
+                ];
+                if ($codeVal !== null && $codeVal !== '') {
+                    $updateData['code'] = $codeVal;
+                }
+                $this->pb->update($this->col('resources'), $rec['id'], $updateData);
                 $this->affectedRows = 1;
             }
             return true;
@@ -491,6 +521,20 @@ class PocketBaseStatement {
                 $this->pb->update($this->col('resource_files'), $id, ['downloads_count' => (int)($rec['downloads_count'] ?? 0) + 1]);
                 $this->affectedRows = 1;
             }
+            return true;
+        }
+
+        // -------------------------------------------------------------
+        // 20b. UPDATE resource_files SET code = ? WHERE resource_id = ?
+        // -------------------------------------------------------------
+        if (preg_match('/UPDATE resource_files SET code = \? WHERE resource_id = \?/i', $sql)) {
+            $newCode = strtoupper(trim((string)($params[0] ?? '')));
+            $resourceId = (string)($params[1] ?? '');
+            $files = $this->pb->getFullList($this->col('resource_files'), ['filter' => 'resource_id=' . $this->q($resourceId)]);
+            foreach ($files as $f) {
+                $this->pb->update($this->col('resource_files'), $f['id'], ['code' => $newCode]);
+            }
+            $this->affectedRows = count($files);
             return true;
         }
 

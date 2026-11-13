@@ -35,7 +35,7 @@ function initResourceForm() {
             typeTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentResourceType = tab.getAttribute('data-type');
-            
+
             const linkField = document.getElementById('fieldRedirectLink');
             const textField = document.getElementById('fieldTextContent');
             const filesField = document.getElementById('fieldFilesInfo');
@@ -43,7 +43,7 @@ function initResourceForm() {
             const linksField = document.getElementById('fieldLinksContent');
             const inputLink = document.getElementById('inputLink');
             const inputText = document.getElementById('inputText');
-            
+
             if (currentResourceType === 'redirect') {
                 if (linkField) linkField.style.display = 'block';
                 if (textField) textField.style.display = 'none';
@@ -123,7 +123,7 @@ function initResourceForm() {
             expiryChips.forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
             currentExpiryPreset = chip.getAttribute('data-preset');
-            
+
             if (currentExpiryPreset === 'custom') {
                 customDateContainer.style.display = 'block';
             } else {
@@ -385,6 +385,20 @@ function openModal(modalId) {
         modal.classList.add('active');
         if (modalId === 'createModal') {
             generateNewCode();
+            const ghToggle = document.getElementById('inputEnableGithubSync');
+            if (ghToggle) {
+                ghToggle.checked = false;
+                const cont = document.getElementById('createGithubFieldsContainer');
+                if (cont) cont.style.display = 'none';
+            }
+            const ghRepo = document.getElementById('inputGithubRepo');
+            if (ghRepo) ghRepo.value = '';
+            const ghBranch = document.getElementById('inputGithubBranch');
+            if (ghBranch) ghBranch.value = 'main';
+            const ghSubdir = document.getElementById('inputGithubSubdir');
+            if (ghSubdir) ghSubdir.value = '';
+            const ghToken = document.getElementById('inputGithubToken');
+            if (ghToken) ghToken.value = '';
         }
     }
 }
@@ -482,7 +496,10 @@ async function handleResourceSubmit(e) {
         links: linksArray,
         expiry_preset: currentExpiryPreset,
         custom_expiry: document.getElementById('inputCustomExpiry') ? document.getElementById('inputCustomExpiry').value : '',
-        github_repo: document.getElementById('inputGithubRepo') ? document.getElementById('inputGithubRepo').value.trim() : '',
+        github_enabled: (currentResourceType === 'hosting' && document.getElementById('inputEnableGithubSync'))
+            ? document.getElementById('inputEnableGithubSync').checked
+            : false,
+        github_repo: (document.getElementById('inputEnableGithubSync')?.checked && document.getElementById('inputGithubRepo')) ? document.getElementById('inputGithubRepo').value.trim() : '',
         github_branch: document.getElementById('inputGithubBranch') ? document.getElementById('inputGithubBranch').value.trim() : 'main',
         github_subdir: document.getElementById('inputGithubSubdir') ? document.getElementById('inputGithubSubdir').value.trim() : '',
         github_token: document.getElementById('inputGithubToken') ? document.getElementById('inputGithubToken').value.trim() : ''
@@ -541,11 +558,31 @@ async function deleteResource(id, code) {
 }
 
 /**
+ * Generate random 6-character code for Edit modal
+ */
+function generateNewEditCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const editCodeInput = document.getElementById('editCode');
+    if (editCodeInput) {
+        editCodeInput.value = code;
+        editCodeInput.focus();
+        editCodeInput.select();
+    }
+}
+
+/**
  * Open Edit Modal
  */
 function openEditModal(resource) {
     document.getElementById('editId').value = resource.id;
-    document.getElementById('editCode').value = resource.code;
+    const editCodeInput = document.getElementById('editCode');
+    if (editCodeInput) {
+        editCodeInput.value = resource.code || '';
+    }
     document.getElementById('editTitle').value = resource.title;
     document.getElementById('editType').value = resource.type;
 
@@ -623,6 +660,7 @@ function openEditModal(resource) {
 async function handleEditSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('editId').value;
+    const editCodeVal = document.getElementById('editCode') ? document.getElementById('editCode').value.trim().toUpperCase() : '';
     const title = document.getElementById('editTitle').value;
     const type = document.getElementById('editType').value;
     const contentLink = document.getElementById('editInputLink').value;
@@ -641,6 +679,7 @@ async function handleEditSubmit(e) {
             body: JSON.stringify({
                 action: 'update',
                 id: id,
+                code: editCodeVal,
                 title: title,
                 content_link: contentLink,
                 content_text: contentText,
@@ -666,11 +705,11 @@ async function handleEditSubmit(e) {
 function showQrCode(code, fullUrl) {
     document.getElementById('qrModalCode').innerText = code;
     document.getElementById('qrModalUrl').innerText = fullUrl;
-    
+
     const qrImg = document.getElementById('qrImage');
     const encodedUrl = encodeURIComponent(fullUrl);
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}&margin=10`;
-    
+
     openModal('qrModal');
 }
 
@@ -813,7 +852,7 @@ function applyResourceFiltersAndSort() {
 function resetResourceFilters() {
     const filterInput = document.getElementById('filterInput');
     if (filterInput) filterInput.value = '';
-    
+
     const typeButtons = document.querySelectorAll('.filter-chip-btn');
     typeButtons.forEach(btn => {
         if (btn.getAttribute('data-type') === 'all') {
@@ -954,9 +993,12 @@ async function openSiteManager(code, title) {
     currentSiteFile = 'index.php';
     isSiteFileDirty = false;
 
+    // Immediately reset GitHub UI so previous modal data never leaks
+    renderGithubConfig(null);
+
     document.getElementById('siteModalCode').innerText = code;
     document.getElementById('siteModalTitle').innerText = currentSiteTitle;
-    
+
     const liveUrl = `/sites/${code}/`;
     const openLink = document.getElementById('siteModalOpenLink');
     if (openLink) openLink.href = liveUrl;
@@ -981,7 +1023,7 @@ async function loadSiteData(code) {
             currentSiteSummary = data.summary;
             renderSiteOverview(data.summary);
             renderGithubConfig(data.github_config || null);
-            
+
             // Choose file to open: index.php, index.html, or first file
             let fileToOpen = null;
             if (data.summary.has_index && data.summary.main_file) {
@@ -1104,7 +1146,7 @@ async function loadSiteFile(filename) {
     setFileDirty(false);
 
     document.getElementById('siteActiveFileName').innerText = filename;
-    
+
     // Update active highlight in sidebar
     document.querySelectorAll('.site-tree-item').forEach(el => {
         el.classList.remove('active');
@@ -1423,6 +1465,8 @@ function renderGithubConfig(gh) {
     const lastSyncedBadge = document.getElementById('ghLastSyncedBadge');
     const webhookCard = document.getElementById('siteGhWebhookCard');
 
+    const toggle = document.getElementById('siteGhEnabledToggle');
+
     const repoInput = document.getElementById('siteGhRepo');
     const branchInput = document.getElementById('siteGhBranch');
     const subdirInput = document.getElementById('siteGhSubdir');
@@ -1435,13 +1479,17 @@ function renderGithubConfig(gh) {
     if (clearTokenBox) clearTokenBox.checked = false;
 
     if (gh && gh.owner && gh.repo) {
+        const isEnabled = (gh.enabled !== false);
+        if (toggle) toggle.checked = isEnabled;
+        toggleSiteGithubActive(isEnabled);
+
         if (repoInput) repoInput.value = `${gh.owner}/${gh.repo}`;
         if (branchInput) branchInput.value = gh.branch || 'main';
         if (subdirInput) subdirInput.value = gh.subdir || '';
 
-        if (statusDot) statusDot.style.display = 'inline';
-        if (headerPullBtn) headerPullBtn.style.display = 'inline-flex';
-        if (pullBtn) pullBtn.style.display = 'inline-flex';
+        if (statusDot) statusDot.style.display = isEnabled ? 'inline' : 'none';
+        if (headerPullBtn) headerPullBtn.style.display = isEnabled ? 'inline-flex' : 'none';
+        if (pullBtn) pullBtn.style.display = isEnabled ? 'inline-flex' : 'none';
         if (unlinkBtn) unlinkBtn.style.display = 'inline-flex';
 
         if (tokenStatus) tokenStatus.style.display = gh.has_token ? 'inline' : 'none';
@@ -1455,13 +1503,16 @@ function renderGithubConfig(gh) {
         }
 
         if (webhookCard) {
-            webhookCard.style.display = 'block';
+            webhookCard.style.display = isEnabled ? 'block' : 'none';
             const urlInput = document.getElementById('siteGhWebhookUrl');
             const secretInput = document.getElementById('siteGhWebhookSecret');
             if (urlInput) urlInput.value = gh.webhook_url || '';
             if (secretInput) secretInput.value = gh.webhook_secret || '';
         }
     } else {
+        if (toggle) toggle.checked = false;
+        toggleSiteGithubActive(false);
+
         if (repoInput) repoInput.value = '';
         if (branchInput) branchInput.value = 'main';
         if (subdirInput) subdirInput.value = '';
@@ -1478,15 +1529,61 @@ function renderGithubConfig(gh) {
 }
 
 /**
+ * Handle toggle for enabling / disabling GitHub sync in Site Manager
+ */
+function toggleSiteGithubActive(isEnabled) {
+    const badge = document.getElementById('siteGhEnabledBadge');
+    if (badge) {
+        badge.innerText = isEnabled ? 'ACTIVE' : 'DISABLED';
+        badge.style.background = isEnabled ? '#10b981' : 'rgba(255, 255, 255, 0.15)';
+        badge.style.color = '#fff';
+    }
+    const wrapper = document.getElementById('siteGhFieldsWrapper');
+    if (wrapper) {
+        wrapper.style.opacity = isEnabled ? '1' : '0.55';
+    }
+    const repoInput = document.getElementById('siteGhRepo');
+    if (repoInput) {
+        if (!isEnabled) {
+            repoInput.removeAttribute('required');
+        } else {
+            repoInput.setAttribute('required', 'required');
+        }
+    }
+    const saveBtn = document.getElementById('btnSaveAndSyncGh');
+    if (saveBtn) {
+        saveBtn.innerText = isEnabled ? '💾 Save & Pull Now' : '💾 Save Settings (Disabled)';
+    }
+    const headerPullBtn = document.getElementById('btnHeaderGithubPull');
+    const pullBtn = document.getElementById('btnPullGhOnly');
+    const statusDot = document.getElementById('siteGithubStatusDot');
+    const webhookCard = document.getElementById('siteGhWebhookCard');
+    if (!isEnabled) {
+        if (headerPullBtn) headerPullBtn.style.display = 'none';
+        if (pullBtn) pullBtn.style.display = 'none';
+        if (statusDot) statusDot.style.display = 'none';
+        if (webhookCard) webhookCard.style.display = 'none';
+    }
+}
+
+/**
  * Save GitHub Link Settings & Pull Immediately
  */
 async function saveGithubLinkConfig(e) {
     e.preventDefault();
+    const isGhEnabled = document.getElementById('siteGhEnabledToggle') ? document.getElementById('siteGhEnabledToggle').checked : false;
+    const repoVal = document.getElementById('siteGhRepo').value.trim();
+
+    if (isGhEnabled && !repoVal) {
+        showToast('Please enter a GitHub repository URL or owner/repo.', 'error');
+        return;
+    }
+
     const btn = document.getElementById('btnSaveAndSyncGh');
     const origText = btn ? btn.innerText : '';
     if (btn) {
         btn.disabled = true;
-        btn.innerText = 'Syncing from GitHub...';
+        btn.innerText = isGhEnabled ? 'Syncing from GitHub...' : 'Saving...';
     }
 
     try {
@@ -1496,32 +1593,76 @@ async function saveGithubLinkConfig(e) {
             body: JSON.stringify({
                 action: 'github_save',
                 code: currentSiteCode,
-                github_repo: document.getElementById('siteGhRepo').value.trim(),
+                github_enabled: isGhEnabled,
+                github_repo: repoVal,
                 github_branch: document.getElementById('siteGhBranch').value.trim() || 'main',
                 github_subdir: document.getElementById('siteGhSubdir').value.trim(),
                 github_token: document.getElementById('siteGhToken').value.trim(),
                 clear_token: document.getElementById('siteGhClearToken')?.checked || false,
-                sync_now: true
+                sync_now: isGhEnabled
             })
         });
         const data = await res.json();
         if (data.success) {
-            showToast(`Synced ${data.files_extracted} files from GitHub!`, 'success');
+            if (isGhEnabled) {
+                showToast(`Synced ${data.files_extracted} files from GitHub!`, 'success');
+            } else {
+                showToast('GitHub sync configuration saved (Disabled).', 'success');
+            }
             renderGithubConfig(data.github_config);
             if (data.summary) {
                 currentSiteSummary = data.summary;
                 renderSiteOverview(data.summary);
             }
         } else {
-            showToast(data.error || 'Failed to sync from GitHub', 'error');
+            showToast(data.error || 'Failed to save GitHub settings', 'error');
         }
     } catch (err) {
-        showToast('Network error syncing from GitHub', 'error');
+        showToast('Network error saving GitHub settings', 'error');
     } finally {
         if (btn) {
             btn.disabled = false;
             btn.innerText = origText;
         }
+    }
+}
+
+/**
+ * Delete All Files from Micro-hosting Site
+ */
+async function deleteAllSiteFiles() {
+    if (!currentSiteCode) return;
+    const confirmMsg = `⚠️ ARE YOU ABSOLUTELY SURE?\n\nThis will PERMANENTLY DELETE ALL FILES AND FOLDERS inside micro-site "${currentSiteCode}".\n\nUse this to clean up and start fresh. This cannot be undone.`;
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/site.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_all_files',
+                code: currentSiteCode
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('All site files deleted successfully.', 'success');
+            currentSiteSummary = data.summary;
+            renderSiteOverview(data.summary);
+            // Clear editor
+            currentSiteFile = null;
+            const textarea = document.getElementById('siteCodeTextarea');
+            if (textarea) textarea.value = '';
+            const activeLabel = document.getElementById('siteActiveFileName');
+            if (activeLabel) activeLabel.innerText = 'No file open';
+            reloadSitePreview();
+        } else {
+            showToast(data.error || 'Failed to delete all files.', 'error');
+        }
+    } catch (err) {
+        showToast('Network error while deleting all files.', 'error');
     }
 }
 

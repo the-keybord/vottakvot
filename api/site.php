@@ -282,6 +282,31 @@ if ($action === 'delete_file') {
 }
 
 // ============================================================================
+// Action: delete_all_files (Delete all files and folders inside the site)
+// ============================================================================
+if ($action === 'delete_all_files') {
+    $ok = empty_site_directory($code);
+    if (!$ok) {
+        echo json_encode(['success' => false, 'error' => 'Failed to empty site directory. Check server permissions.']);
+        exit;
+    }
+
+    // Clear content_text in database so default index is not revived
+    try {
+        $pdo->prepare("UPDATE resources SET content_text = '', updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$resource['id']]);
+    } catch (\Throwable $e) {
+        // Ignore DB update error
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'All files have been deleted.',
+        'summary' => get_site_summary($code)
+    ]);
+    exit;
+}
+
+// ============================================================================
 // Action: upload (Upload files or ZIP archive)
 // ============================================================================
 if ($action === 'upload') {
@@ -449,12 +474,16 @@ if ($action === 'github_save') {
     $token = trim($input['github_token'] ?? '');
     $clearToken = !empty($input['clear_token']);
     $syncNow = !empty($input['sync_now']);
+    $githubEnabled = isset($input['github_enabled']) ? !empty($input['github_enabled']) : true;
 
     $parsed = GithubSync::parseRepoInput($repoInput, $branch, $subdir);
     if (!$parsed) {
         echo json_encode(['success' => false, 'error' => 'Please enter a valid GitHub URL or owner/repo.']);
         exit;
     }
+
+    $parsed['enabled'] = (bool)$githubEnabled;
+    $parsed['code'] = $code;
 
     $existing = GithubSync::decodeConfig($resource['content_link'] ?? '');
     if (!$clearToken) {
@@ -476,7 +505,7 @@ if ($action === 'github_save') {
     }
 
     $syncResult = null;
-    if ($syncNow) {
+    if ($syncNow && $parsed['enabled']) {
         $syncResult = GithubSync::syncToDirectory($parsed, $siteDir);
         if (!$syncResult['success']) {
             echo json_encode(['success' => false, 'error' => $syncResult['error'] ?? 'GitHub sync failed.']);
@@ -490,7 +519,7 @@ if ($action === 'github_save') {
 
     echo json_encode([
         'success' => true,
-        'synced' => $syncNow,
+        'synced' => ($syncNow && $parsed['enabled']),
         'files_extracted' => $syncResult['files_extracted'] ?? 0,
         'github_config' => GithubSync::maskConfigForUi($parsed, $code, get_base_url()),
         'summary' => get_site_summary($code),
@@ -505,6 +534,16 @@ if ($action === 'github_sync') {
     $config = GithubSync::decodeConfig($resource['content_link'] ?? '');
     if (!$config) {
         echo json_encode(['success' => false, 'error' => 'No GitHub repository is linked to this site yet.']);
+        exit;
+    }
+
+    if (empty($config['enabled'])) {
+        echo json_encode(['success' => false, 'error' => 'GitHub sync is currently disabled for this site. Enable it first.']);
+        exit;
+    }
+
+    if (!empty($config['code']) && $config['code'] !== $code) {
+        echo json_encode(['success' => false, 'error' => 'Security error: GitHub configuration belongs to another resource.']);
         exit;
     }
 
