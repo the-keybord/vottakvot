@@ -2952,12 +2952,12 @@ textarea.form-control {
   flex-shrink: 0;
 }
 
-/* 2. Floating Link Cards Carousel "In The Air" (No enclosing box/section) */
+/* 2. Floating Link Cards Carousel "In The Air" (No arrows, colorful filling) */
 .course-air-carousel-container {
   position: relative;
-  padding: 1.5rem 1.5rem 0.5rem;
-  display: flex;
-  align-items: center;
+  padding: 1.25rem 1.5rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .course-air-carousel-track {
@@ -2968,7 +2968,7 @@ textarea.form-control {
   scroll-behavior: smooth;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 0.5rem 0.25rem 1rem;
+  padding: 0.5rem 0.25rem 0.85rem;
   width: 100%;
 }
 
@@ -2976,58 +2976,64 @@ textarea.form-control {
   display: none;
 }
 
-/* Floating Air-Cards */
+/* Floating Colorful Air-Cards */
 .air-card {
   flex: 0 0 240px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  border-radius: 18px;
+  box-shadow: 0 8px 22px -4px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
   padding: 1rem 1.15rem;
   position: relative;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 130px;
+  min-height: 135px;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .air-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.12), 0 10px 14px -5px rgba(0, 0, 0, 0.06);
-  border-color: #cbd5e1;
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.12), 0 0 16px rgba(99, 102, 241, 0.2);
 }
 
 .air-card-stripe {
   position: absolute;
   top: 0;
-  left: 14px;
-  right: 14px;
+  left: 0;
+  right: 0;
   height: 4px;
-  border-radius: 0 0 4px 4px;
 }
 
 .air-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.air-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
 }
 
 .air-card-icon {
-  font-size: 1.85rem;
+  font-size: 1.45rem;
   line-height: 1;
 }
 
 .air-card-domain {
   font-size: 0.72rem;
-  color: #64748b;
-  font-weight: 600;
-  background: #f1f5f9;
+  font-weight: 700;
   border-radius: 6px;
-  padding: 0.15rem 0.45rem;
+  padding: 0.15rem 0.5rem;
   max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3044,9 +3050,9 @@ textarea.form-control {
 }
 
 .air-card-desc {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #475569;
+  margin-top: 0.3rem;
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -3084,17 +3090,17 @@ textarea.form-control {
   border-color: #fca5a5;
 }
 
-/* Add Card Pill in Carousel */
+/* Add Card in Carousel */
 .air-card-add {
-  border: 2px dashed rgba(99, 102, 241, 0.4);
-  background: rgba(99, 102, 241, 0.02);
+  border: 2px dashed rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.04);
   align-items: center;
   justify-content: center;
   text-align: center;
 }
 
 .air-card-add:hover {
-  background: rgba(99, 102, 241, 0.06);
+  background: rgba(99, 102, 241, 0.09);
   border-color: var(--accent-primary);
   transform: translateY(-4px);
 }
@@ -3126,50 +3132,40 @@ textarea.form-control {
   font-size: 0.95rem;
 }
 
-/* Carousel Scroll Buttons */
-.carousel-nav-btn {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #334155;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-  z-index: 10;
-}
-
-.carousel-nav-btn:hover {
-  background: var(--accent-primary);
-  color: #ffffff;
-  border-color: var(--accent-primary);
-  transform: scale(1.08);
-}
-
-.carousel-prev {
-  margin-right: 0.5rem;
-}
-
-.carousel-next {
-  margin-left: 0.5rem;
-}
-
-/* 3. Files Section Integration */
+/* 3. Screen-Fitted File Section (2-Column Grid) */
 .course-files-wrapper {
   flex: 1;
-  padding: 0.5rem 1.5rem 2.5rem;
+  padding: 0.25rem 1.5rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.course-files-grid-layout {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.course-files-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
+}
+
+.course-files-main {
+  min-width: 0;
+}
+
+.course-scrollable-files-list {
+  max-height: calc(100vh - 360px);
+  min-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
 }
 
 .course-upload-zone {
   margin-bottom: 0;
+  padding: 1rem 1.25rem;
 }
 
 /* Modal Emoji & Color Picker */
@@ -3233,7 +3229,16 @@ textarea.form-control {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Mobile Adjustments */
+/* Responsive Adjustments */
+@media (max-width: 900px) {
+  .course-files-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .course-scrollable-files-list {
+    max-height: 450px;
+  }
+}
+
 @media (max-width: 768px) {
   .course-unified-header {
     height: auto;
@@ -3249,10 +3254,7 @@ textarea.form-control {
     padding: 1rem 0.75rem 0.25rem;
   }
   .course-files-wrapper {
-    padding: 0.5rem 0.75rem 2rem;
-  }
-  .carousel-nav-btn {
-    display: none;
+    padding: 0.25rem 0.75rem 1.5rem;
   }
 }
 

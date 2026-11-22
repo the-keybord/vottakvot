@@ -3,9 +3,9 @@
  * TikTak - Course Dashboard Aggregator View
  * Clean classroom design with:
  * 1. Single Top Navigation Bar with high-contrast projector access code banner.
- * 2. Floating Link Cards Carousel in the air (no enclosing sections or heavy boxes).
- * 3. Day-based File Console (matches standard file console with Day 1 of N, prev/next day navigation, pinned section, upload).
- * 4. In-place live Teacher Edit Mode (add/edit/delete link cards, pin/delete files).
+ * 2. Floating Link Cards Carousel in the air (no arrows, colorful filled cards).
+ * 3. Day-based File Console (split layout: drag/drop & pinned on left, day files navigator on right).
+ * 4. In-place live Teacher Edit Mode (remove icons & pin controls visible only in admin view).
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -71,133 +71,130 @@ if (!is_array($courseCards)) {
         </div>
     </header>
 
-    <!-- 2. Floating Link Cards "In The Air" Carousel (No enclosure/section container) -->
+    <!-- 2. Floating Link Cards "In The Air" Carousel (No arrows, colorful filling) -->
     <div class="course-air-carousel-container">
-        <button type="button" class="carousel-nav-btn carousel-prev" id="btnCarouselPrev" onclick="scrollAirCarousel(-1)" aria-label="Scroll left" title="Scroll left">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
-        </button>
-
         <div class="course-air-carousel-track" id="courseAirTrack">
-            <!-- Dynamic cards injected via JavaScript -->
+            <!-- Dynamic colorful cards injected via JavaScript -->
         </div>
-
-        <button type="button" class="carousel-nav-btn carousel-next" id="btnCarouselNext" onclick="scrollAirCarousel(1)" aria-label="Scroll right" title="Scroll right">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-        </button>
     </div>
 
-    <!-- 3. Standard Day-Based File Management Resource (Full width, ordered by days) -->
+    <!-- 3. Screen-Fitted File Layout: Left Column (Dropzone & Pinned), Right Column (Day Files) -->
     <div class="course-files-wrapper">
-        <!-- Pinned Materials Section (Visible whenever pinned files exist) -->
-        <div id="coursePinnedSection" class="pinned-section-card" style="display: none;">
-            <div class="pinned-section-header">
-                <div class="pinned-header-title">
-                    <span class="pinned-icon">📌</span>
-                    <h2>Pinned Materials</h2>
-                    <span id="coursePinnedCountBadge" class="pinned-count-pill">0 pinned</span>
-                </div>
-                <span class="pinned-subtitle">Important course materials pinned to top</span>
-            </div>
-            <div id="coursePinnedFilesList" class="pinned-files-vertical-list">
-                <!-- Pinned files injected dynamically -->
-            </div>
-        </div>
+        <div class="course-files-grid-layout">
+            <!-- LEFT COLUMN: Drag & Drop Card & Pinned Materials -->
+            <div class="course-files-sidebar" id="courseFilesSidebar">
+                <!-- Teacher Upload Dropzone (Visible to teacher or when in edit mode) -->
+                <div id="courseDropZone" class="upload-dropzone course-upload-zone" onclick="triggerCourseFileInput()" style="<?= $isProf ? '' : 'display: none;' ?>">
+                    <input type="file" id="courseFileInputElem" style="display: none;" onchange="handleCourseFileSelect(event)">
+                    <div class="dropzone-content">
+                        <div class="dropzone-icon">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <div class="dropzone-text">
+                            <h3 style="font-size: 0.95rem; margin-bottom: 0.2rem;">Drag &amp; drop files, or <span class="highlight-link">browse</span></h3>
+                            <p class="dropzone-hints" style="font-size: 0.76rem;">
+                                <span>Max 500 MB</span> &bull; <span>Worksheets, slides, starter code</span>
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Teacher / Student Upload Dropzone -->
-        <div id="courseDropZone" class="upload-dropzone course-upload-zone" onclick="triggerCourseFileInput()" style="<?= $isProf ? '' : 'display: none;' ?>">
-            <input type="file" id="courseFileInputElem" style="display: none;" onchange="handleCourseFileSelect(event)">
-            <div class="dropzone-content">
-                <div class="dropzone-icon">
-                    <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                </div>
-                <div class="dropzone-text">
-                    <h3 style="font-size: 1rem;">Drag &amp; drop class files here, or <span class="highlight-link">browse</span></h3>
-                    <p class="dropzone-hints" style="font-size: 0.8rem;">
-                        <span>Max 500 MB per file</span> &bull; 
-                        <span>Worksheets, starter projects, slides &amp; archives</span>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Upload Progress Bar Overlay -->
-            <div id="courseUploadProgressContainer" class="upload-progress-container" style="display: none;" onclick="event.stopPropagation()">
-                <div class="progress-info-row">
-                    <div id="courseUploadFileName" class="upload-filename">Uploading file...</div>
-                    <div id="courseUploadProgressPct" class="upload-pct">0%</div>
-                </div>
-                <div class="progress-track">
-                    <div id="courseUploadProgressBar" class="progress-fill" style="width: 0%;"></div>
-                </div>
-                <div id="courseUploadWarningNote" class="upload-warning-note" style="display: none;"></div>
-            </div>
-        </div>
-
-        <!-- Single Day Full-Width Card Navigator (Day 1 of N) -->
-        <div id="courseDayViewerCard" class="day-viewer-card" style="display: none;">
-            <!-- Day Navigation Header Bar -->
-            <div class="day-nav-bar">
-                <button id="btnCoursePrevDay" class="btn-day-nav" onclick="changeCourseDay(-1)" title="Previous active day (Arrow Left)" aria-label="Previous Day">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
-                    <span class="nav-btn-text">Previous Day</span>
-                </button>
-
-                <div class="day-center-info">
-                    <div class="day-counter-label" id="courseDayCounterLabel">Day 1 of 1</div>
-                    <h2 class="day-main-title" id="courseDayMainTitle">Today</h2>
-                    <div class="day-summary-badges">
-                        <span id="courseDayFilesBadge" class="day-metric-pill">0 files</span>
-                        <span id="courseDaySizeBadge" class="day-metric-pill">0 MB</span>
+                    <!-- Upload Progress Bar Overlay -->
+                    <div id="courseUploadProgressContainer" class="upload-progress-container" style="display: none;" onclick="event.stopPropagation()">
+                        <div class="progress-info-row">
+                            <div id="courseUploadFileName" class="upload-filename">Uploading...</div>
+                            <div id="courseUploadProgressPct" class="upload-pct">0%</div>
+                        </div>
+                        <div class="progress-track">
+                            <div id="courseUploadProgressBar" class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div id="courseUploadWarningNote" class="upload-warning-note" style="display: none;"></div>
                     </div>
                 </div>
 
-                <button id="btnCourseNextDay" class="btn-day-nav" onclick="changeCourseDay(1)" title="Next active day (Arrow Right)" aria-label="Next Day">
-                    <span class="nav-btn-text">Next Day</span>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-            </div>
-
-            <!-- Date Ribbon Pills (Quick Day Jumper) -->
-            <div class="date-ribbon-bar">
-                <span class="ribbon-label">Jump to Date:</span>
-                <div id="courseDateRibbonPills" class="date-ribbon-pills">
-                    <!-- Date pills injected dynamically -->
+                <!-- Pinned Materials Section -->
+                <div id="coursePinnedSection" class="pinned-section-card" style="display: none;">
+                    <div class="pinned-section-header">
+                        <div class="pinned-header-title">
+                            <span class="pinned-icon">📌</span>
+                            <h2>Pinned Materials</h2>
+                            <span id="coursePinnedCountBadge" class="pinned-count-pill">0 pinned</span>
+                        </div>
+                    </div>
+                    <div id="coursePinnedFilesList" class="pinned-files-vertical-list">
+                        <!-- Pinned files injected dynamically -->
+                    </div>
                 </div>
             </div>
 
-            <!-- Day Search & Filter Bar -->
-            <div class="day-toolbar">
-                <div class="day-search-box">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <input type="text" id="courseDaySearchInput" class="form-control" placeholder="Search files in this day..." oninput="filterCourseDayFiles(this.value)">
+            <!-- RIGHT COLUMN: Single Day Full-Width Card Navigator (Day 1 of N) -->
+            <div class="course-files-main">
+                <div id="courseDayViewerCard" class="day-viewer-card" style="display: none;">
+                    <!-- Day Navigation Header Bar -->
+                    <div class="day-nav-bar">
+                        <button id="btnCoursePrevDay" class="btn-day-nav" onclick="changeCourseDay(-1)" title="Previous active day (Arrow Left)" aria-label="Previous Day">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                            <span class="nav-btn-text">Previous Day</span>
+                        </button>
+
+                        <div class="day-center-info">
+                            <div class="day-counter-label" id="courseDayCounterLabel">Day 1 of 1</div>
+                            <h2 class="day-main-title" id="courseDayMainTitle">Today</h2>
+                            <div class="day-summary-badges">
+                                <span id="courseDayFilesBadge" class="day-metric-pill">0 files</span>
+                                <span id="courseDaySizeBadge" class="day-metric-pill">0 MB</span>
+                            </div>
+                        </div>
+
+                        <button id="btnCourseNextDay" class="btn-day-nav" onclick="changeCourseDay(1)" title="Next active day (Arrow Right)" aria-label="Next Day">
+                            <span class="nav-btn-text">Next Day</span>
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Date Ribbon Pills (Quick Day Jumper) -->
+                    <div class="date-ribbon-bar">
+                        <span class="ribbon-label">Jump to Date:</span>
+                        <div id="courseDateRibbonPills" class="date-ribbon-pills">
+                            <!-- Date pills injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Day Search & Filter Bar -->
+                    <div class="day-toolbar">
+                        <div class="day-search-box">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="courseDaySearchInput" class="form-control" placeholder="Search files in this day..." oninput="filterCourseDayFiles(this.value)">
+                        </div>
+                        <div class="day-keyboard-hint">
+                            <span>Use <kbd>◀</kbd> and <kbd>▶</kbd> arrows to switch days</span>
+                        </div>
+                    </div>
+
+                    <!-- Full-Width Active Day Files List (Screen-fitted with internal scroll) -->
+                    <div id="courseActiveDayFilesList" class="day-files-vertical-list course-scrollable-files-list">
+                        <!-- File items injected dynamically -->
+                    </div>
                 </div>
-                <div class="day-keyboard-hint">
-                    <span>Tip: Use <kbd>◀</kbd> and <kbd>▶</kbd> keyboard arrows to switch days</span>
+
+                <!-- Empty Files State -->
+                <div id="courseEmptyFilesState" class="empty-files-placeholder" style="display: none;">
+                    <div class="empty-files-icon">📁</div>
+                    <h3>No course files uploaded yet</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
+                        <?= $isProf ? 'Use the upload box on the left to share worksheets, starter files, and class slides.' : 'The teacher has not added any files for this course yet.' ?>
+                    </p>
+                </div>
+
+                <!-- Loading State Indicator -->
+                <div id="courseLoadingFilesState" class="empty-files-placeholder">
+                    <div class="empty-files-icon">⏳</div>
+                    <h3>Loading course files...</h3>
                 </div>
             </div>
-
-            <!-- Full-Width Active Day Files List -->
-            <div id="courseActiveDayFilesList" class="day-files-vertical-list">
-                <!-- File items injected dynamically -->
-            </div>
-        </div>
-
-        <!-- Empty Files State -->
-        <div id="courseEmptyFilesState" class="empty-files-placeholder" style="display: none;">
-            <div class="empty-files-icon">📁</div>
-            <h3>No course files uploaded yet</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
-                <?= $isProf ? 'Use the upload zone above to share worksheets, project files, and class slides with students.' : 'The teacher has not added any files for this course yet.' ?>
-            </p>
-        </div>
-
-        <!-- Loading State Indicator -->
-        <div id="courseLoadingFilesState" class="empty-files-placeholder">
-            <div class="empty-files-icon">⏳</div>
-            <h3>Loading course files...</h3>
         </div>
     </div>
 </div>
@@ -315,11 +312,12 @@ function toggleCourseEditMode() {
         if (icon) icon.innerText = '👁️';
         if (text) text.innerText = 'Student View';
         if (dropZone) dropZone.style.display = 'block';
-        showToast('Teacher edit mode enabled', 'info');
+        showToast('Admin Edit Mode active: tools enabled', 'info');
     } else {
         if (btn) btn.classList.remove('active');
         if (icon) icon.innerText = '✏️';
         if (text) text.innerText = 'Edit Mode';
+        if (dropZone && !IS_TEACHER) dropZone.style.display = 'none';
         showToast('Switched to Student View', 'info');
     }
 
@@ -331,7 +329,7 @@ function toggleCourseEditMode() {
 }
 
 /**
- * Render Floating Air Cards Carousel
+ * Render Floating Air Cards Carousel with Rich Color Filling
  */
 function renderAirCards() {
     const track = document.getElementById('courseAirTrack');
@@ -347,16 +345,29 @@ function renderAirCards() {
         const domain = extractDomain(c.url);
         const cardElem = document.createElement('div');
         cardElem.className = 'air-card';
-        cardElem.style.setProperty('--card-accent', c.color || '#3b82f6');
+        const color = c.color || '#3b82f6';
+
+        // Rich color filling & styling
+        cardElem.style.setProperty('--card-accent', color);
+        cardElem.style.setProperty('--card-accent-soft', color + '22');
+        cardElem.style.setProperty('--card-accent-solid', color);
+        cardElem.style.borderColor = color + '55';
+        cardElem.style.background = `linear-gradient(135deg, ${color}14 0%, ${color}06 100%), #ffffff`;
 
         cardElem.innerHTML = `
-            <div class="air-card-stripe" style="background: ${escapeHtml(c.color || '#3b82f6')}"></div>
+            <div class="air-card-stripe" style="background: ${escapeHtml(color)}"></div>
             <div class="air-card-top">
-                <span class="air-card-icon">${escapeHtml(c.icon || '🔗')}</span>
-                <span class="air-card-domain">${escapeHtml(domain)}</span>
+                <div class="air-card-icon-wrap" style="background: ${color}20; border-color: ${color}55;">
+                    <span class="air-card-icon">${escapeHtml(c.icon || '🔗')}</span>
+                </div>
+                <span class="air-card-domain" style="background: ${color}15; color: ${color}; border: 1px solid ${color}30;">
+                    ${escapeHtml(domain)}
+                </span>
             </div>
-            <h3 class="air-card-title">${escapeHtml(c.title || 'Resource')}</h3>
-            ${c.desc ? `<p class="air-card-desc">${escapeHtml(c.desc)}</p>` : ''}
+            <div class="air-card-body">
+                <h3 class="air-card-title">${escapeHtml(c.title || 'Resource')}</h3>
+                ${c.desc ? `<p class="air-card-desc">${escapeHtml(c.desc)}</p>` : ''}
+            </div>
             
             ${(IS_TEACHER && isEditMode) ? `
                 <div class="air-card-edit-actions" onclick="event.stopPropagation()">
@@ -397,13 +408,6 @@ function renderAirCards() {
             </div>
         `;
     }
-}
-
-function scrollAirCarousel(direction) {
-    const track = document.getElementById('courseAirTrack');
-    if (!track) return;
-    const scrollAmount = 300;
-    track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
 }
 
 function extractDomain(url) {
@@ -549,7 +553,7 @@ async function saveCardsToServer(newList) {
 }
 
 /**
- * File Console Integration (Matches proven files_view)
+ * File Console Integration (Screen-fitted layout, only admin can delete/pin)
  */
 async function loadCourseFiles() {
     try {
@@ -597,10 +601,45 @@ function renderCoursePinnedSection(pinnedFiles) {
         return;
     }
 
+    const canTeacherAct = (IS_TEACHER && isEditMode);
     const sortedPinned = [...pinnedFiles].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
     section.style.display = 'block';
     if (countBadge) countBadge.innerText = `${sortedPinned.length} pinned`;
-    list.innerHTML = sortedPinned.map(f => renderCourseFileCard(f, true)).join('');
+
+    list.innerHTML = sortedPinned.map(f => {
+        const safeId = escapeHtml(String(f.id));
+        const safeName = escapeHtml(String(f.filename || f.original_filename || 'file'));
+        return `
+            <div class="file-item-card" id="pinned-file-${safeId}" style="padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;">
+                <div class="file-card-main">
+                    <div class="file-icon-box ${f.type_meta ? f.type_meta.class : ''}">
+                        <span>${f.type_meta ? f.type_meta.icon : '📄'}</span>
+                    </div>
+                    <div class="file-meta-content">
+                        <div class="file-filename-row">
+                            <h4 class="file-display-name" title="${safeName}" style="font-size: 0.88rem;">${safeName}</h4>
+                            <span class="file-size-tag">${escapeHtml(f.size_formatted || '')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="file-card-actions">
+                    ${canTeacherAct ? `
+                        <button type="button" class="btn-action-pin is-pinned" onclick="togglePinCourseFile('${safeId}')" title="Unpin file">
+                            <span class="pin-icon">📌</span>
+                            <span class="pin-text">Unpin</span>
+                        </button>
+                        <button type="button" class="btn-action-delete" onclick="deleteCourseFile('${safeId}', '${safeName}')" title="Delete file">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    ` : ''}
+                    <a href="${f.download_url}&code=${encodeURIComponent(COURSE_CODE)}" class="btn btn-primary btn-sm btn-download-file" download>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Download</span>
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderCurrentCourseDayView() {
@@ -660,37 +699,40 @@ function changeCourseDay(delta) {
 function renderCourseFileCard(file, isPinnedArea = false) {
     const heavyClass = file.is_heavy ? 'file-card-heavy' : '';
     const heavyBadge = file.is_heavy 
-        ? `<span class="badge badge-heavy-red" title="Heavy File (>100MB)">⚠️ ${file.size_formatted} — Heavy File</span>` 
+        ? `<span class="badge badge-heavy-red" title="Heavy File (>100MB)">⚠️ ${file.size_formatted}</span>` 
         : `<span class="file-size-tag">${file.size_formatted}</span>`;
 
-    const canTeacherAct = (IS_TEACHER && (isEditMode || true));
+    // Strictly visible in Admin Edit Mode only
+    const canTeacherAct = (IS_TEACHER && isEditMode);
+    const safeId = escapeHtml(String(file.id));
+    const safeName = escapeHtml(String(file.filename || file.original_filename || 'file'));
 
     const pinBtn = canTeacherAct
-        ? `<button type="button" class="btn-action-pin ${file.is_pinned ? 'is-pinned' : ''}" onclick="togglePinCourseFile(${file.id})" title="${file.is_pinned ? 'Unpin file' : 'Pin to top section'}">
+        ? `<button type="button" class="btn-action-pin ${file.is_pinned ? 'is-pinned' : ''}" onclick="togglePinCourseFile('${safeId}')" title="${file.is_pinned ? 'Unpin file' : 'Pin to top section'}">
             <span class="pin-icon">📌</span>
             <span class="pin-text">${file.is_pinned ? 'Pinned' : 'Pin'}</span>
            </button>` 
         : (file.is_pinned ? `<span class="pinned-indicator-pill" title="Pinned by teacher">📌 Pinned</span>` : '');
 
     const deleteBtn = canTeacherAct
-        ? `<button type="button" class="btn-action-delete" onclick="deleteCourseFile(${file.id}, '${escapeHtml(file.filename)}')" title="Delete file">
-            <span class="delete-icon">🗑️</span>
+        ? `<button type="button" class="btn-action-delete" onclick="deleteCourseFile('${safeId}', '${safeName}')" title="Delete file">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
            </button>`
         : '';
 
     return `
-        <div class="file-item-card ${heavyClass}" id="file-card-${file.id}">
+        <div class="file-item-card ${heavyClass}" id="file-card-${safeId}">
             <div class="file-card-main">
-                <div class="file-icon-box ${file.type_meta.class}">
-                    <span>${file.type_meta.icon}</span>
+                <div class="file-icon-box ${file.type_meta ? file.type_meta.class : ''}">
+                    <span>${file.type_meta ? file.type_meta.icon : '📄'}</span>
                 </div>
                 <div class="file-meta-content">
                     <div class="file-filename-row">
-                        <h4 class="file-display-name" title="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</h4>
+                        <h4 class="file-display-name" title="${safeName}">${safeName}</h4>
                         ${heavyBadge}
                     </div>
                     <div class="file-submeta-row">
-                        <span class="file-ext-tag">${escapeHtml(file.type_meta.tag)}</span>
+                        <span class="file-ext-tag">${escapeHtml(file.type_meta ? file.type_meta.tag : 'FILE')}</span>
                         <span>&bull;</span>
                         <span class="file-upload-time">${escapeHtml(file.upload_date)} at ${escapeHtml(file.time_formatted || '')}</span>
                         <span>&bull;</span>
@@ -721,15 +763,16 @@ function filterCourseDayFiles(query) {
 }
 
 async function togglePinCourseFile(fileId) {
+    if (!IS_TEACHER) return;
     try {
         const res = await fetch('/api/files.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'pin', code: COURSE_CODE, file_id: fileId })
+            body: JSON.stringify({ action: 'toggle_pin', file_id: fileId })
         });
         const data = await res.json();
         if (data.success) {
-            showToast(data.is_pinned ? 'File pinned to top section!' : 'File unpinned.', 'success');
+            showToast(data.message || (data.is_pinned ? 'File pinned to top section!' : 'File unpinned.'), 'success');
             await loadCourseFiles();
         } else {
             showToast(data.error || 'Failed to update pin', 'error');
@@ -740,16 +783,20 @@ async function togglePinCourseFile(fileId) {
 }
 
 async function deleteCourseFile(fileId, filename) {
+    if (!IS_TEACHER) {
+        showToast('Only teachers can delete files.', 'error');
+        return;
+    }
     if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
     try {
         const res = await fetch('/api/files.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete', code: COURSE_CODE, file_id: fileId })
+            body: JSON.stringify({ action: 'delete', file_id: fileId })
         });
         const data = await res.json();
         if (data.success) {
-            showToast('File deleted successfully.', 'success');
+            showToast(`Deleted ${filename}`, 'success');
             await loadCourseFiles();
         } else {
             showToast(data.error || 'Delete failed', 'error');
