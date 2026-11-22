@@ -41,6 +41,7 @@ function initResourceForm() {
             const filesField = document.getElementById('fieldFilesInfo');
             const hostingField = document.getElementById('fieldHostingContent');
             const linksField = document.getElementById('fieldLinksContent');
+            const courseField = document.getElementById('fieldCourseContent');
             const inputLink = document.getElementById('inputLink');
             const inputText = document.getElementById('inputText');
 
@@ -50,6 +51,7 @@ function initResourceForm() {
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'none';
                 if (linksField) linksField.style.display = 'none';
+                if (courseField) courseField.style.display = 'none';
                 if (inputLink) inputLink.required = true;
                 if (inputText) inputText.required = false;
             } else if (currentResourceType === 'text') {
@@ -58,6 +60,7 @@ function initResourceForm() {
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'none';
                 if (linksField) linksField.style.display = 'none';
+                if (courseField) courseField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = true;
             } else if (currentResourceType === 'links') {
@@ -66,6 +69,7 @@ function initResourceForm() {
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'none';
                 if (linksField) linksField.style.display = 'block';
+                if (courseField) courseField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 const createList = document.getElementById('createLinksContainer');
@@ -79,6 +83,7 @@ function initResourceForm() {
                 if (filesField) filesField.style.display = 'block';
                 if (hostingField) hostingField.style.display = 'none';
                 if (linksField) linksField.style.display = 'none';
+                if (courseField) courseField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 updateNoticeCodes();
@@ -88,9 +93,19 @@ function initResourceForm() {
                 if (filesField) filesField.style.display = 'none';
                 if (hostingField) hostingField.style.display = 'block';
                 if (linksField) linksField.style.display = 'none';
+                if (courseField) courseField.style.display = 'none';
                 if (inputLink) inputLink.required = false;
                 if (inputText) inputText.required = false;
                 updateNoticeCodes();
+            } else if (currentResourceType === 'course') {
+                if (linkField) linkField.style.display = 'none';
+                if (textField) textField.style.display = 'none';
+                if (filesField) filesField.style.display = 'none';
+                if (hostingField) hostingField.style.display = 'none';
+                if (linksField) linksField.style.display = 'none';
+                if (courseField) courseField.style.display = 'block';
+                if (inputLink) inputLink.required = false;
+                if (inputText) inputText.required = false;
             }
         });
     });
@@ -425,11 +440,13 @@ function openModal(modalId) {
             const filesField = document.getElementById('fieldFilesInfo');
             const hostingField = document.getElementById('fieldHostingContent');
             const linksField = document.getElementById('fieldLinksContent');
+            const courseField = document.getElementById('fieldCourseContent');
             if (linkField) linkField.style.display = 'block';
             if (textField) textField.style.display = 'none';
             if (filesField) filesField.style.display = 'none';
             if (hostingField) hostingField.style.display = 'none';
             if (linksField) linksField.style.display = 'none';
+            if (courseField) courseField.style.display = 'none';
             if (linkInput) linkInput.required = true;
             if (textInput) textInput.required = false;
 

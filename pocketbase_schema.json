@@ -23,7 +23,7 @@
       {
         "name": "type",
         "type": "select",
-        "values": ["redirect", "text", "files", "hosting", "links"],
+        "values": ["redirect", "text", "files", "hosting", "links", "course"],
         "required": true
       },
       {

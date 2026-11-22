@@ -36,7 +36,7 @@ if ($action === 'create') {
     $code = strtoupper(trim($input['code'] ?? ''));
     $title = trim($input['title'] ?? '');
     $rawType = $input['type'] ?? 'redirect';
-    $type = in_array($rawType, ['redirect', 'text', 'files', 'hosting', 'links']) ? $rawType : 'redirect';
+    $type = in_array($rawType, ['redirect', 'text', 'files', 'hosting', 'links', 'course']) ? $rawType : 'redirect';
     $contentLink = trim($input['content_link'] ?? '');
     $contentText = trim($input['content_text'] ?? '');
     $expiryPreset = $input['expiry_preset'] ?? 'never';
@@ -140,6 +140,10 @@ if ($action === 'create') {
             ];
         }
         $contentText = json_encode($cleanLinks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    } elseif ($type === 'course') {
+        if (empty($contentText)) {
+            $contentText = json_encode(['cards' => []], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
     }
 
     if (empty($title)) {
@@ -151,6 +155,8 @@ if ($action === 'create') {
             $title = 'Micro Site ' . $code;
         } elseif ($type === 'links') {
             $title = 'Link List ' . $code;
+        } elseif ($type === 'course') {
+            $title = 'Course Hub ' . $code;
         } else {
             $title = 'File Console ' . $code;
         }
@@ -444,6 +450,67 @@ if ($action === 'extend') {
         'success' => true,
         'new_expires_at' => $newExpiresAt,
         'label' => format_expiry_status($newExpiresAt)['label']
+    ]);
+    exit;
+}
+
+if ($action === 'update_course_cards') {
+    if (!is_logged_in()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        exit;
+    }
+
+    $userId = $_SESSION['tiktak_user_id'] ?? '';
+    $code = strtoupper(trim((string)($input['code'] ?? '')));
+    $cards = $input['cards'] ?? null;
+
+    if (empty($code) || !is_array($cards)) {
+        echo json_encode(['success' => false, 'error' => 'Missing code or invalid cards data']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("SELECT * FROM resources WHERE code = ? AND user_id = ? AND type = 'course' LIMIT 1");
+    $stmt->execute([$code, $userId]);
+    $resource = $stmt->fetch();
+
+    if (!$resource) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Course resource not found or access denied']);
+        exit;
+    }
+
+    // Clean and sanitize incoming cards
+    $cleanCards = [];
+    foreach ($cards as $idx => $card) {
+        $cTitle = trim((string)($card['title'] ?? ''));
+        $cUrl = trim((string)($card['url'] ?? ''));
+        if ($cTitle === '' && $cUrl === '') continue;
+        if (!preg_match('~^(https?://|/|#)~i', $cUrl) && $cUrl !== '') {
+            $cUrl = 'https://' . $cUrl;
+        }
+        $cleanCards[] = [
+            'id' => trim((string)($card['id'] ?? ('card_' . ($idx + 1) . '_' . substr(md5(uniqid()), 0, 6)))),
+            'title' => $cTitle !== '' ? $cTitle : 'Resource ' . ($idx + 1),
+            'url' => $cUrl,
+            'icon' => trim((string)($card['icon'] ?? '🔗')),
+            'color' => trim((string)($card['color'] ?? '#6366f1')),
+            'desc' => trim((string)($card['desc'] ?? ''))
+        ];
+    }
+
+    $payload = [
+        'cards' => $cleanCards,
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+    $jsonEncoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    $update = $pdo->prepare("UPDATE resources SET content_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
+    $update->execute([$jsonEncoded, $resource['id'], $userId]);
+
+    echo json_encode([
+        'success' => true,
+        'cards' => $cleanCards
     ]);
     exit;
 }

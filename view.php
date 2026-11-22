@@ -63,6 +63,9 @@ $expiryStatus = !$isError ? format_expiry_status($resource['expires_at'] ?? null
                 <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem;"><?= $errorMessage ?></p>
                 <a href="/" class="btn btn-primary">Return to Search Gateway</a>
             </div>
+        <?php elseif (($resource['type'] ?? '') === 'course'): ?>
+            <!-- Course Dashboard Aggregator View -->
+            <?php require __DIR__ . '/includes/course_view.php'; ?>
         <?php elseif (($resource['type'] ?? '') === 'files'): ?>
             <!-- MinIO File Console Viewer -->
             <?php require __DIR__ . '/includes/files_view.php'; ?>

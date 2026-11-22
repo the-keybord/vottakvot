@@ -118,6 +118,7 @@ $baseUrl = get_base_url();
                     'hosting' => 0,
                     'links' => 0,
                     'files' => 0,
+                    'course' => 0,
                 ];
                 foreach ($resources as $r) {
                     $t = $r['type'] ?? 'redirect';
@@ -267,6 +268,11 @@ $baseUrl = get_base_url();
                                         if ($lCount > 0 && !empty($linksData[0]['title'])) {
                                             $preview .= " • " . mb_strimwidth($linksData[0]['title'], 0, 35, '...');
                                         }
+                                    } elseif ($r['type'] === 'course') {
+                                        $cData = json_decode($r['content_text'] ?? '', true);
+                                        $cCards = (is_array($cData) && isset($cData['cards']) && is_array($cData['cards'])) ? count($cData['cards']) : 0;
+                                        $fStats = get_resource_files_summary($pdo, $r['id']);
+                                        $preview = "Course Hub • {$cCards} link " . ($cCards === 1 ? 'card' : 'cards') . " • {$fStats['total_files']} files ({$fStats['total_size_formatted']})";
                                     } else {
                                         $fStats = get_resource_files_summary($pdo, $r['id']);
                                         $preview = "MinIO folder: {$r['code']}/ • {$fStats['total_files']} files ({$fStats['total_size_formatted']})";
@@ -303,6 +309,8 @@ $baseUrl = get_base_url();
                                             <span class="badge badge-hosting">🌐 Micro-host</span>
                                         <?php elseif ($r['type'] === 'links'): ?>
                                             <span class="badge badge-links">📑 Link List</span>
+                                        <?php elseif ($r['type'] === 'course'): ?>
+                                            <span class="badge badge-course">🎓 Course</span>
                                         <?php else: ?>
                                             <span class="badge badge-files">📁 File Console</span>
                                         <?php endif; ?>
@@ -406,6 +414,10 @@ $baseUrl = get_base_url();
                         <div class="type-tab" data-type="hosting">
                             <span>🌐</span>
                             <span>Micro-hosting</span>
+                        </div>
+                        <div class="type-tab" data-type="course">
+                            <span>🎓</span>
+                            <span>Course Hub</span>
                         </div>
                     </div>
 
@@ -540,6 +552,24 @@ $baseUrl = get_base_url();
                             </div>
                             <div id="createLinksContainer" class="link-items-list">
                                 <!-- Dynamic link items -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course Hub Info Notice -->
+                    <div id="fieldCourseContent" class="form-group" style="display: none;">
+                        <div style="background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 1.15rem 1.25rem;">
+                            <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                                <span style="font-size: 1.8rem; line-height: 1;">🎓</span>
+                                <div>
+                                    <strong style="color: var(--text-main); font-size: 1rem; display: block; margin-bottom: 0.35rem;">Classroom Launchpad &amp; File Manager</strong>
+                                    <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0; line-height: 1.5;">
+                                        Combines your classroom link cards (Scratch, Google Slides, quizzes, meet links) and downloadable course materials (worksheets, starter zips, templates) under a single code.
+                                    </p>
+                                    <div style="margin-top: 0.65rem; font-size: 0.82rem; color: var(--accent-primary); font-weight: 600;">
+                                        💡 You can add link cards and upload files directly on the live page in <strong>Teacher Edit Mode</strong>!
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
