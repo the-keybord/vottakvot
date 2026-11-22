@@ -25,51 +25,52 @@ $expiryStatus = !$isError ? format_expiry_status($resource['expires_at'] ?? null
         <div class="ambient-orb orb-2"></div>
     </div>
 
-    <header class="app-header">
-        <a href="/" class="brand-link">
-            <div class="brand-icon">⚡</div>
-            <span><?= APP_NAME ?></span>
-            <span class="brand-badge">Gateway</span>
-        </a>
-        <div class="header-actions">
-            <a href="/" class="btn btn-ghost btn-sm">Enter Code</a>
-            
-            <?php if (is_logged_in()): ?>
-                <a href="/prof/dashboard.php" class="btn btn-secondary btn-sm" title="Open Professor Dashboard">
-                    👑 Professor
-                </a>
-                <a href="/prof/logout.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-ghost btn-sm" style="color: var(--accent-rose);">
-                    Sign Out
-                </a>
-            <?php else: ?>
-                <button class="btn btn-primary btn-sm" onclick="openTeacherLoginModal()" title="Login as Teacher for special options">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    Teacher Login
-                </button>
-            <?php endif; ?>
-        </div>
-    </header>
-
-    <main class="main-wrapper">
-        <?php if ($isError): ?>
-            <!-- Error / Expired Notice Card -->
-            <div class="notice-card">
-                <div class="notice-icon icon-error">
-                    <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                </div>
-                <h2 class="view-title" style="margin-bottom: 0.75rem;"><?= htmlspecialchars($errorTitle) ?></h2>
-                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem;"><?= $errorMessage ?></p>
-                <a href="/" class="btn btn-primary">Return to Search Gateway</a>
+    <?php if (!$isError && ($resource['type'] ?? '') === 'course'): ?>
+        <!-- Full Viewport Single-Nav Course Hub View -->
+        <?php require __DIR__ . '/includes/course_view.php'; ?>
+    <?php else: ?>
+        <header class="app-header">
+            <a href="/" class="brand-link">
+                <div class="brand-icon">⚡</div>
+                <span><?= APP_NAME ?></span>
+                <span class="brand-badge">Gateway</span>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="btn btn-ghost btn-sm">Enter Code</a>
+                
+                <?php if (is_logged_in()): ?>
+                    <a href="/prof/dashboard.php" class="btn btn-secondary btn-sm" title="Open Professor Dashboard">
+                        👑 Professor
+                    </a>
+                    <a href="/prof/logout.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-ghost btn-sm" style="color: var(--accent-rose);">
+                        Sign Out
+                    </a>
+                <?php else: ?>
+                    <button class="btn btn-primary btn-sm" onclick="openTeacherLoginModal()" title="Login as Teacher for special options">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Teacher Login
+                    </button>
+                <?php endif; ?>
             </div>
-        <?php elseif (($resource['type'] ?? '') === 'course'): ?>
-            <!-- Course Dashboard Aggregator View -->
-            <?php require __DIR__ . '/includes/course_view.php'; ?>
-        <?php elseif (($resource['type'] ?? '') === 'files'): ?>
-            <!-- MinIO File Console Viewer -->
-            <?php require __DIR__ . '/includes/files_view.php'; ?>
-        <?php elseif (($resource['type'] ?? '') === 'links'): ?>
+        </header>
+
+        <main class="main-wrapper">
+            <?php if ($isError): ?>
+                <!-- Error / Expired Notice Card -->
+                <div class="notice-card">
+                    <div class="notice-icon icon-error">
+                        <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="view-title" style="margin-bottom: 0.75rem;"><?= htmlspecialchars($errorTitle) ?></h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem;"><?= $errorMessage ?></p>
+                    <a href="/" class="btn btn-primary">Return to Search Gateway</a>
+                </div>
+            <?php elseif (($resource['type'] ?? '') === 'files'): ?>
+                <!-- MinIO File Console Viewer -->
+                <?php require __DIR__ . '/includes/files_view.php'; ?>
+            <?php elseif (($resource['type'] ?? '') === 'links'): ?>
             <!-- Link List Viewer -->
             <?php 
                 $links = json_decode($resource['content_text'] ?? '[]', true) ?: [];
@@ -216,6 +217,7 @@ $expiryStatus = !$isError ? format_expiry_status($resource['expires_at'] ?? null
             </div>
         <?php endif; ?>
     </main>
+    <?php endif; ?>
 
     <!-- In-Page Teacher Login Modal -->
     <div id="teacherLoginModal" class="modal-backdrop">

@@ -222,19 +222,24 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
-        // 5. SELECT * FROM resources WHERE code = ? AND user_id = ? AND type = 'hosting' LIMIT 1
+        // 5. SELECT * FROM resources WHERE code = ? AND user_id = ? (AND type = '...')? LIMIT 1
         // -------------------------------------------------------------
-        if (preg_match('/SELECT .* FROM resources WHERE code = \? AND user_id = \? AND type = \'hosting\'/i', $sql)) {
+        if (preg_match('/SELECT .* FROM resources WHERE code = \? AND user_id = \?(?: AND type = \'([a-z0-9_]+)\')?/i', $sql, $m)) {
             $code = strtoupper(trim((string)($params[0] ?? '')));
             $userId = (string)($params[1] ?? '');
+            $typeFilter = !empty($m[1]) ? $m[1] : null;
             if ($userId === '1' || $userId === '0' || empty($userId)) {
                 $userId = 'tyoun07mmiuck1b';
             }
-            $rec = $this->pb->getFirstListItem($this->col('resources'), 'code=' . $this->q($code) . ' && type=\'hosting\'');
+            $filter = 'code=' . $this->q($code);
+            if ($typeFilter) {
+                $filter .= ' && type=' . $this->q($typeFilter);
+            }
+            $rec = $this->pb->getFirstListItem($this->col('resources'), $filter);
             if (!$rec && $this->pb->getLastHttpCode() !== 200) {
                 $all = $this->pb->getFullList($this->col('resources'));
                 foreach ($all as $item) {
-                    if (strtoupper($item['code'] ?? '') === $code && ($item['type'] ?? '') === 'hosting') {
+                    if (strtoupper($item['code'] ?? '') === $code && (!$typeFilter || ($item['type'] ?? '') === $typeFilter)) {
                         $rec = $item;
                         break;
                     }
@@ -369,6 +374,22 @@ class PocketBaseStatement {
             if ($rec) {
                 $this->pb->update($this->col('resources'), $rec['id'], [
                     'content_link' => $link,
+                ]);
+                $this->affectedRows = 1;
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------
+        // 10c. UPDATE resources SET content_text = ?, updated_at = ... WHERE id = ?
+        // -------------------------------------------------------------
+        if (preg_match('/UPDATE resources SET content_text = \?/i', $sql)) {
+            $text = (string)($params[0] ?? '');
+            $id = (string)($params[1] ?? '');
+            $rec = $this->pb->getRecord($this->col('resources'), $id);
+            if ($rec) {
+                $this->pb->update($this->col('resources'), $rec['id'], [
+                    'content_text' => $text,
                 ]);
                 $this->affectedRows = 1;
             }

@@ -480,13 +480,21 @@ if ($action === 'update_course_cards') {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM resources WHERE code = ? AND user_id = ? AND type = 'course' LIMIT 1");
-    $stmt->execute([$code, $userId]);
+    // Fetch course resource by code
+    $stmt = $pdo->prepare("SELECT * FROM resources WHERE code = ? LIMIT 1");
+    $stmt->execute([$code]);
     $resource = $stmt->fetch();
 
-    if (!$resource) {
+    if (!$resource || ($resource['type'] ?? '') !== 'course') {
         http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Course resource not found or access denied']);
+        echo json_encode(['success' => false, 'error' => 'Course resource not found']);
+        exit;
+    }
+
+    // Check ownership or professor credentials
+    if (!empty($resource['user_id']) && (string)$resource['user_id'] !== (string)$userId && ($_SESSION['tiktak_username'] ?? '') !== 'prof') {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized to edit this course']);
         exit;
     }
 
@@ -515,8 +523,8 @@ if ($action === 'update_course_cards') {
     ];
     $jsonEncoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-    $update = $pdo->prepare("UPDATE resources SET content_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
-    $update->execute([$jsonEncoded, $resource['id'], $userId]);
+    $update = $pdo->prepare("UPDATE resources SET content_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $update->execute([$jsonEncoded, $resource['id']]);
 
     echo json_encode([
         'success' => true,

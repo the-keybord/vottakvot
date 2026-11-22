@@ -1,8 +1,11 @@
 <?php
 /**
  * TikTak - Course Dashboard Aggregator View
- * Combines classroom link launchpad cards (top third) with an integrated course file manager (lower two thirds).
- * Features high-contrast classroom projector banner, kid-friendly large targets, and live teacher in-place edit mode.
+ * Clean classroom design with:
+ * 1. Single Top Navigation Bar with high-contrast projector access code banner.
+ * 2. Floating Link Cards Carousel in the air (no enclosing sections or heavy boxes).
+ * 3. Day-based File Console (matches standard file console with Day 1 of N, prev/next day navigation, pinned section, upload).
+ * 4. In-place live Teacher Edit Mode (add/edit/delete link cards, pin/delete files).
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -25,218 +28,240 @@ if (!is_array($courseCards)) {
 }
 ?>
 
-<div class="course-viewport-container" id="courseViewport">
-    <!-- Top Classroom Projector Navigation Bar -->
-    <header class="course-header">
-        <div class="course-header-left">
+<div class="course-page-wrapper">
+    <!-- 1. Single Clean Top Navigation Bar (Classroom Projector Ready) -->
+    <header class="course-unified-header">
+        <div class="course-header-brand">
             <a href="/" class="brand-link" title="TikTak Gateway">
                 <div class="brand-icon">⚡</div>
                 <span class="brand-name">tik.tak.md</span>
             </a>
-            <div class="course-title-wrap">
+            <span class="header-divider">/</span>
+            <div class="course-header-meta">
                 <span class="badge badge-course">🎓 Course</span>
-                <h1 class="course-title-text" id="courseTitleDisplay"><?= $courseTitle ?></h1>
+                <span class="course-name-text"><?= $courseTitle ?></span>
             </div>
         </div>
 
-        <!-- Prominent Classroom Projector Access Code Banner -->
-        <div class="course-code-banner" onclick="copyToClipboard('<?= $accessUrl ?>', 'Student access link copied!')" title="Click to copy link for students">
-            <div class="banner-inner">
-                <span class="banner-site">tik.tak.md</span>
-                <span class="banner-slash">/</span>
-                <span class="banner-label">CODE:</span>
-                <strong class="banner-code"><?= $courseCode ?></strong>
-            </div>
-            <button class="banner-copy-btn" aria-label="Copy Link" title="Copy Student Link">
+        <!-- Prominent Projector Access Code Banner for Students -->
+        <div class="course-projector-banner" onclick="copyToClipboard('<?= $accessUrl ?>', 'Student link copied!')" title="Click to copy student access link">
+            <div class="projector-banner-label">tik.tak.md</div>
+            <div class="projector-banner-slash">/</div>
+            <div class="projector-banner-prefix">CODE:</div>
+            <div class="projector-banner-code"><?= $courseCode ?></div>
+            <button type="button" class="projector-copy-icon" aria-label="Copy Code">
                 <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                 </svg>
             </button>
         </div>
 
-        <div class="course-header-right">
+        <div class="course-header-actions">
             <?php if ($isProf): ?>
                 <button type="button" id="btnCourseEditToggle" class="btn btn-secondary btn-sm edit-mode-pill" onclick="toggleCourseEditMode()">
                     <span id="editModeIcon">✏️</span>
                     <span id="editModeText">Edit Mode</span>
                 </button>
-                <a href="/prof/dashboard.php" class="btn btn-ghost btn-sm" title="Open Teacher Dashboard">👑 Dashboard</a>
+                <a href="/prof/dashboard.php" class="btn btn-ghost btn-sm" title="Teacher Dashboard">👑 Dashboard</a>
                 <a href="/prof/logout.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-ghost btn-sm" style="color: var(--accent-rose);">Sign Out</a>
             <?php else: ?>
                 <a href="/" class="btn btn-ghost btn-sm">Enter Code</a>
-                <button class="btn btn-primary btn-sm" onclick="openTeacherLoginModal()" title="Teacher Login">Teacher</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openTeacherLoginModal()" title="Teacher Login">Teacher Login</button>
             <?php endif; ?>
         </div>
     </header>
 
-    <!-- Main Viewport (Split: Top ~35% Cards, Lower ~65% Files) -->
-    <main class="course-main-split">
-        <!-- TOP THIRD: Interactive Link Cards Deck -->
-        <section class="course-cards-section">
-            <div class="course-section-header">
-                <div class="course-section-title-wrap">
-                    <span class="section-icon">🔗</span>
-                    <h2 class="course-section-title">Class Launchpad &amp; Tools</h2>
-                    <span id="courseCardsCountBadge" class="course-count-pill"><?= count($courseCards) ?> <?= count($courseCards) === 1 ? 'link' : 'links' ?></span>
+    <!-- 2. Floating Link Cards "In The Air" Carousel (No enclosure/section container) -->
+    <div class="course-air-carousel-container">
+        <button type="button" class="carousel-nav-btn carousel-prev" id="btnCarouselPrev" onclick="scrollAirCarousel(-1)" aria-label="Scroll left" title="Scroll left">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+
+        <div class="course-air-carousel-track" id="courseAirTrack">
+            <!-- Dynamic cards injected via JavaScript -->
+        </div>
+
+        <button type="button" class="carousel-nav-btn carousel-next" id="btnCarouselNext" onclick="scrollAirCarousel(1)" aria-label="Scroll right" title="Scroll right">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+    </div>
+
+    <!-- 3. Standard Day-Based File Management Resource (Full width, ordered by days) -->
+    <div class="course-files-wrapper">
+        <!-- Pinned Materials Section (Visible whenever pinned files exist) -->
+        <div id="coursePinnedSection" class="pinned-section-card" style="display: none;">
+            <div class="pinned-section-header">
+                <div class="pinned-header-title">
+                    <span class="pinned-icon">📌</span>
+                    <h2>Pinned Materials</h2>
+                    <span id="coursePinnedCountBadge" class="pinned-count-pill">0 pinned</span>
                 </div>
-                <div class="course-section-actions">
-                    <button type="button" id="btnAddCardTop" class="btn btn-primary btn-sm teacher-only-ctrl" onclick="openCourseCardModal()" style="display: none;">
-                        + Add Link Card
-                    </button>
+                <span class="pinned-subtitle">Important course materials pinned to top</span>
+            </div>
+            <div id="coursePinnedFilesList" class="pinned-files-vertical-list">
+                <!-- Pinned files injected dynamically -->
+            </div>
+        </div>
+
+        <!-- Teacher / Student Upload Dropzone -->
+        <div id="courseDropZone" class="upload-dropzone course-upload-zone" onclick="triggerCourseFileInput()" style="<?= $isProf ? '' : 'display: none;' ?>">
+            <input type="file" id="courseFileInputElem" style="display: none;" onchange="handleCourseFileSelect(event)">
+            <div class="dropzone-content">
+                <div class="dropzone-icon">
+                    <svg width="34" height="34" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <div class="dropzone-text">
+                    <h3 style="font-size: 1rem;">Drag &amp; drop class files here, or <span class="highlight-link">browse</span></h3>
+                    <p class="dropzone-hints" style="font-size: 0.8rem;">
+                        <span>Max 500 MB per file</span> &bull; 
+                        <span>Worksheets, starter projects, slides &amp; archives</span>
+                    </p>
                 </div>
             </div>
 
-            <!-- Cards Scrollable Deck -->
-            <div id="courseCardsDeck" class="course-cards-deck">
-                <!-- Cards rendered dynamically by JS -->
-            </div>
-        </section>
-
-        <!-- LOWER TWO THIRDS: Integrated Course File Manager -->
-        <section class="course-files-section">
-            <div class="course-section-header">
-                <div class="course-section-title-wrap">
-                    <span class="section-icon">📁</span>
-                    <h2 class="course-section-title">Course Materials &amp; Downloads</h2>
-                    <span id="courseFilesCountBadge" class="course-count-pill">0 files</span>
-                    <span id="courseFilesTotalSize" class="course-size-tag">0 MB</span>
+            <!-- Upload Progress Bar Overlay -->
+            <div id="courseUploadProgressContainer" class="upload-progress-container" style="display: none;" onclick="event.stopPropagation()">
+                <div class="progress-info-row">
+                    <div id="courseUploadFileName" class="upload-filename">Uploading file...</div>
+                    <div id="courseUploadProgressPct" class="upload-pct">0%</div>
                 </div>
-                <div class="course-section-actions">
-                    <div class="course-search-box">
-                        <input type="text" id="courseFileSearchInput" placeholder="Filter materials..." oninput="filterCourseFiles()">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="triggerCourseFileInput()" title="Upload file">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        Upload Material
-                    </button>
-                    <input type="file" id="courseFileInput" style="display: none;" onchange="handleCourseFileSelect(event)">
+                <div class="progress-track">
+                    <div id="courseUploadProgressBar" class="progress-fill" style="width: 0%;"></div>
                 </div>
+                <div id="courseUploadWarningNote" class="upload-warning-note" style="display: none;"></div>
             </div>
+        </div>
 
-            <!-- Drag & Drop Upload Zone (Visible in Edit Mode or on Drag) -->
-            <div id="courseDropZone" class="course-dropzone" onclick="triggerCourseFileInput()" style="display: none;">
-                <div class="course-dropzone-inner">
-                    <div class="dropzone-icon">☁️</div>
-                    <div class="dropzone-text">
-                        <strong>Drag &amp; drop course worksheets, PDFs, or code archives here</strong>
-                        <span>or click to browse files (max 500 MB)</span>
+        <!-- Single Day Full-Width Card Navigator (Day 1 of N) -->
+        <div id="courseDayViewerCard" class="day-viewer-card" style="display: none;">
+            <!-- Day Navigation Header Bar -->
+            <div class="day-nav-bar">
+                <button id="btnCoursePrevDay" class="btn-day-nav" onclick="changeCourseDay(-1)" title="Previous active day (Arrow Left)" aria-label="Previous Day">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    <span class="nav-btn-text">Previous Day</span>
+                </button>
+
+                <div class="day-center-info">
+                    <div class="day-counter-label" id="courseDayCounterLabel">Day 1 of 1</div>
+                    <h2 class="day-main-title" id="courseDayMainTitle">Today</h2>
+                    <div class="day-summary-badges">
+                        <span id="courseDayFilesBadge" class="day-metric-pill">0 files</span>
+                        <span id="courseDaySizeBadge" class="day-metric-pill">0 MB</span>
                     </div>
                 </div>
-                <div id="courseUploadProgress" class="course-upload-progress-bar" style="display: none;">
-                    <div id="courseUploadFill" class="course-upload-fill" style="width: 0%;"></div>
-                </div>
+
+                <button id="btnCourseNextDay" class="btn-day-nav" onclick="changeCourseDay(1)" title="Next active day (Arrow Right)" aria-label="Next Day">
+                    <span class="nav-btn-text">Next Day</span>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
             </div>
 
-            <!-- Scrollable File Explorer Container -->
-            <div class="course-files-scroll-area">
-                <!-- Pinned Materials Section -->
-                <div id="coursePinnedSection" class="course-pinned-box" style="display: none;">
-                    <div class="pinned-box-header">
-                        <span class="pinned-star">📌</span>
-                        <strong>Important Course Material (Pinned to Top)</strong>
-                    </div>
-                    <div id="coursePinnedFilesList" class="course-pinned-files-grid">
-                        <!-- Pinned files injected dynamically -->
-                    </div>
-                </div>
-
-                <!-- Regular Files List -->
-                <div class="course-files-table-wrap">
-                    <table class="course-files-table">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Size</th>
-                                <th>Uploaded</th>
-                                <th style="text-align: right; width: 1%;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="courseFilesTableBody">
-                            <!-- Files injected dynamically -->
-                        </tbody>
-                    </table>
-
-                    <div id="courseFilesEmptyState" class="course-empty-state" style="display: none;">
-                        <div class="empty-icon">📂</div>
-                        <h3>No Course Materials Yet</h3>
-                        <p>Worksheets, slides, code templates, and PDFs uploaded to this course code will appear here for students.</p>
-                        <button class="btn btn-secondary btn-sm" onclick="triggerCourseFileInput()">+ Upload First File</button>
-                    </div>
+            <!-- Date Ribbon Pills (Quick Day Jumper) -->
+            <div class="date-ribbon-bar">
+                <span class="ribbon-label">Jump to Date:</span>
+                <div id="courseDateRibbonPills" class="date-ribbon-pills">
+                    <!-- Date pills injected dynamically -->
                 </div>
             </div>
-        </section>
-    </main>
+
+            <!-- Day Search & Filter Bar -->
+            <div class="day-toolbar">
+                <div class="day-search-box">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" id="courseDaySearchInput" class="form-control" placeholder="Search files in this day..." oninput="filterCourseDayFiles(this.value)">
+                </div>
+                <div class="day-keyboard-hint">
+                    <span>Tip: Use <kbd>◀</kbd> and <kbd>▶</kbd> keyboard arrows to switch days</span>
+                </div>
+            </div>
+
+            <!-- Full-Width Active Day Files List -->
+            <div id="courseActiveDayFilesList" class="day-files-vertical-list">
+                <!-- File items injected dynamically -->
+            </div>
+        </div>
+
+        <!-- Empty Files State -->
+        <div id="courseEmptyFilesState" class="empty-files-placeholder" style="display: none;">
+            <div class="empty-files-icon">📁</div>
+            <h3>No course files uploaded yet</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
+                <?= $isProf ? 'Use the upload zone above to share worksheets, project files, and class slides with students.' : 'The teacher has not added any files for this course yet.' ?>
+            </p>
+        </div>
+
+        <!-- Loading State Indicator -->
+        <div id="courseLoadingFilesState" class="empty-files-placeholder">
+            <div class="empty-files-icon">⏳</div>
+            <h3>Loading course files...</h3>
+        </div>
+    </div>
 </div>
 
-<!-- IN-PAGE CARD MODAL (Add / Edit Link Card) -->
+<!-- In-Page Add / Edit Link Card Modal (For Teachers) -->
 <div id="courseCardModal" class="modal-backdrop">
-    <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-box" style="max-width: 480px;">
         <div class="modal-header">
-            <h2 id="courseCardModalTitle" class="modal-title">Add Link Card</h2>
-            <button class="modal-close" onclick="closeCourseCardModal()">&times;</button>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="courseCardModalIconHeader" style="font-size: 1.3rem;">🔗</span>
+                <h2 class="modal-title" id="courseCardModalTitle">Add Link Card</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeCourseCardModal()">&times;</button>
         </div>
-        <form onsubmit="handleCourseCardSubmit(event)" autocomplete="off">
-            <input type="hidden" id="cardEditIndex" value="-1">
-            <div class="modal-body" style="display: grid; gap: 1rem;">
-                <div class="form-group" style="margin: 0;">
-                    <label class="form-label" for="cardTitleInput">Card Title</label>
-                    <input type="text" id="cardTitleInput" class="form-control" placeholder="e.g. Scratch Studio, Course Slides, Quiz" required>
+        <form id="courseCardForm" onsubmit="handleCourseCardSubmit(event)">
+            <input type="hidden" id="cardEditId" value="">
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="form-group">
+                    <label class="form-label" for="cardTitleInput">Card Title *</label>
+                    <input type="text" id="cardTitleInput" class="form-control" placeholder="e.g. Scratch Project, Google Slides, Quiz" required autocomplete="off">
                 </div>
 
-                <div class="form-group" style="margin: 0;">
-                    <label class="form-label" for="cardUrlInput">Destination URL</label>
-                    <input type="text" id="cardUrlInput" class="form-control" placeholder="https://scratch.mit.edu/... or /code=XXXXXX" required>
+                <div class="form-group">
+                    <label class="form-label" for="cardUrlInput">Destination URL or Code *</label>
+                    <input type="text" id="cardUrlInput" class="form-control" placeholder="e.g. https://scratch.mit.edu or 6-letter code" required autocomplete="off">
                 </div>
 
-                <div class="form-group" style="margin: 0;">
+                <div class="form-group">
                     <label class="form-label">Emoji / Icon</label>
-                    <div class="emoji-presets-row">
-                        <?php foreach (['🚀', '🐱', '📊', '💻', '🎮', '📖', '🎨', '📝', '🎯', '⚡', '🤖', '🌐'] as $em): ?>
-                            <button type="button" class="emoji-preset-btn" onclick="selectCardEmoji('<?= $em ?>')"><?= $em ?></button>
-                        <?php endforeach; ?>
-                        <input type="text" id="cardIconInput" class="form-control emoji-custom-input" value="🚀" maxlength="4" style="width: 50px; text-align: center; font-size: 1.2rem; padding: 0.3rem;">
+                    <div class="emoji-picker-row">
+                        <input type="text" id="cardIconInput" class="form-control" style="width: 70px; text-align: center; font-size: 1.3rem;" value="🚀" maxlength="4">
+                        <div class="emoji-presets">
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('🚀')">🚀</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('🐱')">🐱</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('📊')">📊</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('💻')">💻</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('🎨')">🎨</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('🎮')">🎮</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('📚')">📚</button>
+                            <button type="button" class="btn-emoji-quick" onclick="setCardEmoji('🔗')">🔗</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin: 0;">
-                    <label class="form-label">Accent Color</label>
-                    <div class="color-presets-row">
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#6366f1" checked>
-                            <span class="color-pill-dot" style="background: #6366f1;"></span> Indigo
-                        </label>
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#0284c7">
-                            <span class="color-pill-dot" style="background: #0284c7;"></span> Sky
-                        </label>
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#10b981">
-                            <span class="color-pill-dot" style="background: #10b981;"></span> Emerald
-                        </label>
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#d97706">
-                            <span class="color-pill-dot" style="background: #d97706;"></span> Amber
-                        </label>
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#e11d48">
-                            <span class="color-pill-dot" style="background: #e11d48;"></span> Rose
-                        </label>
-                        <label class="color-pill-label">
-                            <input type="radio" name="cardColor" value="#8b5cf6">
-                            <span class="color-pill-dot" style="background: #8b5cf6;"></span> Purple
-                        </label>
+                <div class="form-group">
+                    <label class="form-label">Card Accent Color</label>
+                    <div class="color-picker-row">
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#3b82f6" checked><span class="color-dot" style="background: #3b82f6;"></span></label>
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#10b981"><span class="color-dot" style="background: #10b981;"></span></label>
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#f59e0b"><span class="color-dot" style="background: #f59e0b;"></span></label>
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#ef4444"><span class="color-dot" style="background: #ef4444;"></span></label>
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#8b5cf6"><span class="color-dot" style="background: #8b5cf6;"></span></label>
+                        <label class="color-radio"><input type="radio" name="cardColor" value="#06b6d4"><span class="color-dot" style="background: #06b6d4;"></span></label>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin: 0;">
-                    <label class="form-label" for="cardDescInput">Short Note / Subtitle (Optional)</label>
-                    <input type="text" id="cardDescInput" class="form-control" placeholder="e.g. Today's Main Project, Read Chapters 1-3">
+                <div class="form-group">
+                    <label class="form-label" for="cardDescInput">Subtitle / Note (Optional)</label>
+                    <input type="text" id="cardDescInput" class="form-control" placeholder="e.g. Activity 1 • In pairs" autocomplete="off">
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.5rem;">
+            <div class="modal-footer" style="padding: 1rem 1.5rem;">
                 <button type="button" class="btn btn-secondary" onclick="closeCourseCardModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Card</button>
+                <button type="submit" class="btn btn-primary" id="btnSaveCourseCard">Save Card</button>
             </div>
         </form>
     </div>
@@ -244,239 +269,262 @@ if (!is_array($courseCards)) {
 
 <script>
 /**
- * Course Dashboard Client Controller
+ * Course Hub Client Controller
  */
 const COURSE_CODE = <?= json_encode($resource['code']) ?>;
-const IS_TEACHER = <?= json_encode($isProf) ?>;
-let courseCards = <?= json_encode($courseCards) ?>;
-let courseFiles = [];
+const IS_TEACHER = <?= $isProf ? 'true' : 'false' ?>;
+
+let courseCards = <?= json_encode($courseCards, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 let isEditMode = false;
 
+// Files data state matching standard files_view
+let activeDaysData = [];
+let pinnedFilesData = [];
+let currentDayIndex = 0;
+
 document.addEventListener('DOMContentLoaded', () => {
-    renderCourseCards();
+    // 1. Initial render of cards
+    renderAirCards();
+
+    // 2. Fetch files from files API
     loadCourseFiles();
-    setupDropZone();
+
+    // 3. Setup keyboard navigation for days
+    document.addEventListener('keydown', (e) => {
+        if (['input', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) return;
+        if (e.key === 'ArrowLeft') changeCourseDay(-1);
+        if (e.key === 'ArrowRight') changeCourseDay(1);
+    });
+
+    // 4. Setup drag & drop for upload
+    setupCourseDropZone();
 });
 
 /**
- * Toggle Teacher In-Place Edit Mode
+ * Toggle Teacher Edit Mode
  */
 function toggleCourseEditMode() {
-    if (!IS_TEACHER) return;
     isEditMode = !isEditMode;
-
     const btn = document.getElementById('btnCourseEditToggle');
     const icon = document.getElementById('editModeIcon');
-    const txt = document.getElementById('editModeText');
-    const addCardBtn = document.getElementById('btnAddCardTop');
+    const text = document.getElementById('editModeText');
     const dropZone = document.getElementById('courseDropZone');
-    const viewport = document.getElementById('courseViewport');
 
     if (isEditMode) {
-        btn.classList.add('active-edit-mode');
-        icon.textContent = '👁️';
-        txt.textContent = 'Student View';
-        if (addCardBtn) addCardBtn.style.display = 'inline-flex';
+        if (btn) btn.classList.add('active');
+        if (icon) icon.innerText = '👁️';
+        if (text) text.innerText = 'Student View';
         if (dropZone) dropZone.style.display = 'block';
-        if (viewport) viewport.classList.add('in-edit-mode');
+        showToast('Teacher edit mode enabled', 'info');
     } else {
-        btn.classList.remove('active-edit-mode');
-        icon.textContent = '✏️';
-        txt.textContent = 'Edit Mode';
-        if (addCardBtn) addCardBtn.style.display = 'none';
-        if (dropZone) dropZone.style.display = 'none';
-        if (viewport) viewport.classList.remove('in-edit-mode');
+        if (btn) btn.classList.remove('active');
+        if (icon) icon.innerText = '✏️';
+        if (text) text.innerText = 'Edit Mode';
+        showToast('Switched to Student View', 'info');
     }
 
-    renderCourseCards();
-    renderCourseFiles();
+    renderAirCards();
+    if (activeDaysData.length > 0) {
+        renderCurrentCourseDayView();
+    }
+    renderCoursePinnedSection(pinnedFilesData);
 }
 
 /**
- * Render Link Cards Deck
+ * Render Floating Air Cards Carousel
  */
-function renderCourseCards() {
-    const deck = document.getElementById('courseCardsDeck');
-    const countBadge = document.getElementById('courseCardsCountBadge');
-    if (!deck) return;
+function renderAirCards() {
+    const track = document.getElementById('courseAirTrack');
+    if (!track) return;
+    track.innerHTML = '';
 
-    if (countBadge) {
-        countBadge.textContent = `${courseCards.length} ${courseCards.length === 1 ? 'link' : 'links'}`;
+    if (!Array.isArray(courseCards)) {
+        courseCards = [];
     }
 
-    deck.innerHTML = '';
-
-    if (courseCards.length === 0 && !isEditMode) {
-        deck.innerHTML = `
-            <div class="course-deck-empty">
-                <span>🚀</span>
-                <p>No link cards configured for this class launchpad yet.</p>
-                ${IS_TEACHER ? '<button class="btn btn-secondary btn-sm" onclick="toggleCourseEditMode()">Switch to Edit Mode to Add Cards</button>' : ''}
-            </div>
-        `;
-        return;
-    }
-
-    courseCards.forEach((card, idx) => {
+    // Render cards
+    courseCards.forEach((c, idx) => {
+        const domain = extractDomain(c.url);
         const cardElem = document.createElement('div');
-        cardElem.className = 'course-card';
-        cardElem.style.setProperty('--card-accent', card.color || '#6366f1');
-
-        let host = '';
-        try {
-            if (card.url.startsWith('http')) {
-                host = new URL(card.url).hostname.replace(/^www\./, '');
-            } else {
-                host = card.url;
-            }
-        } catch (e) {
-            host = card.url;
-        }
+        cardElem.className = 'air-card';
+        cardElem.style.setProperty('--card-accent', c.color || '#3b82f6');
 
         cardElem.innerHTML = `
-            <a href="${escapeHtml(card.url)}" target="_blank" rel="noopener noreferrer" class="course-card-link">
-                <div class="course-card-header">
-                    <span class="course-card-icon">${escapeHtml(card.icon || '🔗')}</span>
-                    <span class="course-card-host">${escapeHtml(host)}</span>
-                </div>
-                <div class="course-card-body">
-                    <h3 class="course-card-title">${escapeHtml(card.title || 'Untitled Link')}</h3>
-                    ${card.desc ? `<p class="course-card-desc">${escapeHtml(card.desc)}</p>` : ''}
-                </div>
-                <div class="course-card-arrow">↗</div>
-            </a>
+            <div class="air-card-stripe" style="background: ${escapeHtml(c.color || '#3b82f6')}"></div>
+            <div class="air-card-top">
+                <span class="air-card-icon">${escapeHtml(c.icon || '🔗')}</span>
+                <span class="air-card-domain">${escapeHtml(domain)}</span>
+            </div>
+            <h3 class="air-card-title">${escapeHtml(c.title || 'Resource')}</h3>
+            ${c.desc ? `<p class="air-card-desc">${escapeHtml(c.desc)}</p>` : ''}
+            
             ${(IS_TEACHER && isEditMode) ? `
-                <div class="course-card-teacher-tools">
-                    <button type="button" class="card-tool-btn" onclick="editCourseCard(event, ${idx})" title="Edit Card">✏️</button>
-                    <button type="button" class="card-tool-btn card-tool-del" onclick="deleteCourseCard(event, ${idx})" title="Delete Card">🗑️</button>
+                <div class="air-card-edit-actions" onclick="event.stopPropagation()">
+                    <button type="button" class="btn-air-action" onclick="openEditCardModal('${escapeHtml(c.id || '')}', ${idx})" title="Edit card">✏️</button>
+                    <button type="button" class="btn-air-action btn-air-delete" onclick="deleteCard(${idx})" title="Delete card">🗑️</button>
                 </div>
             ` : ''}
         `;
 
-        deck.appendChild(cardElem);
+        cardElem.onclick = (e) => {
+            if (e.target.closest('.air-card-edit-actions')) return;
+            const targetUrl = c.url || '#';
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        };
+
+        track.appendChild(cardElem);
     });
 
-    // Add Card Card Button in Edit Mode
+    // In Edit Mode, append floating "+ Add Card" card
     if (IS_TEACHER && isEditMode) {
-        const addCardBox = document.createElement('div');
-        addCardBox.className = 'course-card course-card-add';
-        addCardBox.onclick = () => openCourseCardModal(-1);
-        addCardBox.innerHTML = `
-            <div class="add-card-content">
-                <span class="add-card-plus">+</span>
-                <strong>Add Link Card</strong>
-                <span>Scratch, Slides, Quiz, etc.</span>
+        const addCardElem = document.createElement('div');
+        addCardElem.className = 'air-card air-card-add';
+        addCardElem.onclick = () => openAddCardModal();
+        addCardElem.innerHTML = `
+            <div class="air-card-add-inner">
+                <div class="air-card-add-icon">➕</div>
+                <div class="air-card-add-label">Add Link Card</div>
             </div>
         `;
-        deck.appendChild(addCardBox);
+        track.appendChild(addCardElem);
+    }
+
+    // If completely empty and in student view
+    if (courseCards.length === 0 && (!IS_TEACHER || !isEditMode)) {
+        track.innerHTML = `
+            <div class="air-cards-empty-notice">
+                <span>🔗 No launchpad links added yet.</span>
+            </div>
+        `;
+    }
+}
+
+function scrollAirCarousel(direction) {
+    const track = document.getElementById('courseAirTrack');
+    if (!track) return;
+    const scrollAmount = 300;
+    track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
+
+function extractDomain(url) {
+    if (!url) return 'Link';
+    try {
+        if (!url.startsWith('http')) return url;
+        const parsed = new URL(url);
+        return parsed.hostname.replace(/^www\./, '');
+    } catch (e) {
+        return 'Link';
     }
 }
 
 /**
- * Open Modal to Add or Edit Link Card
+ * Card Modal & Persistence
  */
-function openCourseCardModal(idx = -1) {
-    const modal = document.getElementById('courseCardModal');
-    const modalTitle = document.getElementById('courseCardModalTitle');
-    const idxInput = document.getElementById('cardEditIndex');
-    const titleInput = document.getElementById('cardTitleInput');
-    const urlInput = document.getElementById('cardUrlInput');
-    const iconInput = document.getElementById('cardIconInput');
-    const descInput = document.getElementById('cardDescInput');
+function openAddCardModal() {
+    document.getElementById('cardEditId').value = '';
+    document.getElementById('cardTitleInput').value = '';
+    document.getElementById('cardUrlInput').value = '';
+    document.getElementById('cardIconInput').value = '🚀';
+    document.getElementById('cardDescInput').value = '';
+    document.getElementById('courseCardModalTitle').innerText = 'Add Link Card';
+    document.getElementById('courseCardModalIconHeader').innerText = '➕';
 
-    idxInput.value = idx;
+    const colorRadios = document.querySelectorAll('input[name="cardColor"]');
+    if (colorRadios.length > 0) colorRadios[0].checked = true;
 
-    if (idx >= 0 && courseCards[idx]) {
-        const c = courseCards[idx];
-        modalTitle.textContent = 'Edit Link Card';
-        titleInput.value = c.title || '';
-        urlInput.value = c.url || '';
-        iconInput.value = c.icon || '🚀';
-        descInput.value = c.desc || '';
-        const colorRadio = document.querySelector(`input[name="cardColor"][value="${c.color || '#6366f1'}"]`);
-        if (colorRadio) colorRadio.checked = true;
-    } else {
-        modalTitle.textContent = 'Add Link Card';
-        titleInput.value = '';
-        urlInput.value = '';
-        iconInput.value = '🚀';
-        descInput.value = '';
-        const defaultRadio = document.querySelector(`input[name="cardColor"][value="#6366f1"]`);
-        if (defaultRadio) defaultRadio.checked = true;
-    }
+    openCourseModal('courseCardModal');
+}
 
-    modal.classList.add('active');
-    titleInput.focus();
+function openEditCardModal(cardId, idx) {
+    const card = courseCards[idx];
+    if (!card) return;
+
+    document.getElementById('cardEditId').value = card.id || `card_${idx}`;
+    document.getElementById('cardTitleInput').value = card.title || '';
+    document.getElementById('cardUrlInput').value = card.url || '';
+    document.getElementById('cardIconInput').value = card.icon || '🚀';
+    document.getElementById('cardDescInput').value = card.desc || '';
+    document.getElementById('courseCardModalTitle').innerText = 'Edit Link Card';
+    document.getElementById('courseCardModalIconHeader').innerText = '✏️';
+
+    const colorRadios = document.querySelectorAll('input[name="cardColor"]');
+    colorRadios.forEach(r => {
+        if (r.value === card.color) r.checked = true;
+    });
+
+    openCourseModal('courseCardModal');
+}
+
+function openCourseModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.add('active');
 }
 
 function closeCourseCardModal() {
-    const modal = document.getElementById('courseCardModal');
-    if (modal) modal.classList.remove('active');
+    const m = document.getElementById('courseCardModal');
+    if (m) m.classList.remove('active');
 }
 
-function selectCardEmoji(em) {
+function setCardEmoji(emoji) {
     const iconInput = document.getElementById('cardIconInput');
-    if (iconInput) iconInput.value = em;
+    if (iconInput) iconInput.value = emoji;
 }
 
-function editCourseCard(e, idx) {
-    e.preventDefault();
-    e.stopPropagation();
-    openCourseCardModal(idx);
-}
-
-async function deleteCourseCard(e, idx) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirm(`Delete card "${courseCards[idx]?.title || 'Link'}"?`)) return;
-
-    courseCards.splice(idx, 1);
-    await saveCourseCardsToServer();
-    renderCourseCards();
-}
-
-/**
- * Handle Add/Edit Card Submission
- */
 async function handleCourseCardSubmit(e) {
     e.preventDefault();
-    const idx = parseInt(document.getElementById('cardEditIndex').value, 10);
+    const btn = document.getElementById('btnSaveCourseCard');
+    const editId = document.getElementById('cardEditId').value;
     const title = document.getElementById('cardTitleInput').value.trim();
     let url = document.getElementById('cardUrlInput').value.trim();
     const icon = document.getElementById('cardIconInput').value.trim() || '🔗';
     const desc = document.getElementById('cardDescInput').value.trim();
-    const colorRadio = document.querySelector('input[name="cardColor"]:checked');
-    const color = colorRadio ? colorRadio.value : '#6366f1';
+    const checkedColor = document.querySelector('input[name="cardColor"]:checked');
+    const color = checkedColor ? checkedColor.value : '#3b82f6';
 
-    if (!url) return;
-    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+    if (!title || !url) {
+        showToast('Title and URL are required', 'error');
+        return;
+    }
+
+    if (url.match(/^[A-Za-z0-9]{3,10}$/)) {
+        url = '/code=' + url.toUpperCase();
+    } else if (!url.match(/^(https?:\/\/|\/|#)/i)) {
         url = 'https://' + url;
     }
 
-    const cardData = {
-        id: idx >= 0 && courseCards[idx]?.id ? courseCards[idx].id : `c_${Date.now()}`,
-        title,
-        url,
-        icon,
-        color,
-        desc
-    };
+    btn.disabled = true;
+    btn.innerText = 'Saving...';
 
-    if (idx >= 0) {
-        courseCards[idx] = cardData;
+    const updatedList = [...courseCards];
+    if (editId) {
+        const foundIdx = updatedList.findIndex(c => (c.id === editId));
+        if (foundIdx !== -1) {
+            updatedList[foundIdx] = { ...updatedList[foundIdx], title, url, icon, color, desc };
+        }
     } else {
-        courseCards.push(cardData);
+        updatedList.push({
+            id: 'card_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            title,
+            url,
+            icon,
+            color,
+            desc
+        });
     }
 
+    await saveCardsToServer(updatedList);
+    btn.disabled = false;
+    btn.innerText = 'Save Card';
     closeCourseCardModal();
-    renderCourseCards();
-    await saveCourseCardsToServer();
 }
 
-/**
- * Persist Cards Array to Server via API
- */
-async function saveCourseCardsToServer() {
+async function deleteCard(idx) {
+    if (!confirm('Are you sure you want to delete this link card?')) return;
+    const updatedList = courseCards.filter((_, i) => i !== idx);
+    await saveCardsToServer(updatedList);
+}
+
+async function saveCardsToServer(newList) {
     try {
         const res = await fetch('/api/resources.php', {
             method: 'POST',
@@ -484,204 +532,250 @@ async function saveCourseCardsToServer() {
             body: JSON.stringify({
                 action: 'update_course_cards',
                 code: COURSE_CODE,
-                cards: courseCards
+                cards: newList
             })
         });
         const data = await res.json();
-        if (!data.success) {
-            alert('Failed to save cards: ' + (data.error || 'Unknown error'));
+        if (data.success) {
+            courseCards = data.cards || newList;
+            renderAirCards();
+            showToast('Course cards saved to database!', 'success');
+        } else {
+            showToast(data.error || 'Failed to save cards', 'error');
         }
     } catch (err) {
-        console.error(err);
-        alert('Network error while saving cards.');
+        showToast('Network error while saving cards', 'error');
     }
 }
 
 /**
- * Load Files from API
+ * File Console Integration (Matches proven files_view)
  */
 async function loadCourseFiles() {
     try {
         const res = await fetch(`/api/files.php?action=list&code=${encodeURIComponent(COURSE_CODE)}`);
         const data = await res.json();
+
+        const loadingElem = document.getElementById('courseLoadingFilesState');
+        if (loadingElem) loadingElem.style.display = 'none';
+
         if (data.success) {
-            courseFiles = data.files || [];
-            renderCourseFiles(data.pinned_files || []);
-            updateFilesSummary(data.stats || {});
+            activeDaysData = data.days || [];
+            pinnedFilesData = data.pinned_files || [];
+
+            renderCoursePinnedSection(pinnedFilesData);
+
+            if (activeDaysData.length === 0) {
+                document.getElementById('courseDayViewerCard').style.display = 'none';
+                document.getElementById('courseEmptyFilesState').style.display = 'block';
+            } else {
+                document.getElementById('courseEmptyFilesState').style.display = 'none';
+                document.getElementById('courseDayViewerCard').style.display = 'block';
+                if (currentDayIndex >= activeDaysData.length) {
+                    currentDayIndex = 0;
+                }
+                renderCurrentCourseDayView();
+            }
+        } else {
+            showToast(data.error || 'Failed to load course files', 'error');
         }
     } catch (err) {
-        console.error('Failed to load course files', err);
+        const loadingElem = document.getElementById('courseLoadingFilesState');
+        if (loadingElem) loadingElem.style.display = 'none';
+        showToast('Failed to connect to storage API', 'error');
     }
 }
 
-function updateFilesSummary(stats) {
-    const countBadge = document.getElementById('courseFilesCountBadge');
-    const sizeTag = document.getElementById('courseFilesTotalSize');
-    if (countBadge) {
-        const count = stats.total_files || courseFiles.length || 0;
-        countBadge.textContent = `${count} ${count === 1 ? 'file' : 'files'}`;
-    }
-    if (sizeTag) {
-        sizeTag.textContent = stats.total_size_formatted || '0 MB';
-    }
-}
+function renderCoursePinnedSection(pinnedFiles) {
+    const section = document.getElementById('coursePinnedSection');
+    const list = document.getElementById('coursePinnedFilesList');
+    const countBadge = document.getElementById('coursePinnedCountBadge');
 
-/**
- * Render Files List & Pinned Section
- */
-function renderCourseFiles(pinned = null) {
-    const tableBody = document.getElementById('courseFilesTableBody');
-    const emptyState = document.getElementById('courseFilesEmptyState');
-    const pinnedSection = document.getElementById('coursePinnedSection');
-    const pinnedGrid = document.getElementById('coursePinnedFilesList');
-    if (!tableBody) return;
-
-    tableBody.innerHTML = '';
-
-    // Separate pinned files
-    const pinnedList = pinned || courseFiles.filter(f => f.is_pinned == 1);
-    const regularFiles = courseFiles;
-
-    // Render Pinned Grid
-    if (pinnedGrid && pinnedSection) {
-        if (pinnedList.length > 0) {
-            pinnedSection.style.display = 'block';
-            pinnedGrid.innerHTML = pinnedList.map(f => `
-                <div class="course-pinned-card">
-                    <div class="pinned-card-left">
-                        <span class="file-icon-badge">${getFileIconEmoji(f.original_filename)}</span>
-                        <div class="pinned-card-info">
-                            <strong class="pinned-filename" title="${escapeHtml(f.original_filename)}">${escapeHtml(f.original_filename)}</strong>
-                            <span class="pinned-filesize">${escapeHtml(f.file_size_formatted || '')}</span>
-                        </div>
-                    </div>
-                    <div class="pinned-card-actions">
-                        <a href="/api/files.php?action=download&code=${encodeURIComponent(COURSE_CODE)}&file_id=${f.id}" class="btn btn-primary btn-sm" download>
-                            ⬇️ Download
-                        </a>
-                        ${(IS_TEACHER && isEditMode) ? `
-                            <button type="button" class="btn btn-ghost btn-sm" onclick="togglePinFile(${f.id})" title="Unpin file">📌</button>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteCourseFile(${f.id})" title="Delete file">🗑️</button>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            pinnedSection.style.display = 'none';
-        }
-    }
-
-    if (regularFiles.length === 0) {
-        if (emptyState) emptyState.style.display = 'block';
+    if (!pinnedFiles || pinnedFiles.length === 0) {
+        section.style.display = 'none';
+        if (list) list.innerHTML = '';
         return;
-    } else {
-        if (emptyState) emptyState.style.display = 'none';
     }
 
-    regularFiles.forEach(f => {
-        const tr = document.createElement('tr');
-        tr.className = 'course-file-row';
-        tr.setAttribute('data-name', (f.original_filename || '').toLowerCase());
+    const sortedPinned = [...pinnedFiles].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
+    section.style.display = 'block';
+    if (countBadge) countBadge.innerText = `${sortedPinned.length} pinned`;
+    list.innerHTML = sortedPinned.map(f => renderCourseFileCard(f, true)).join('');
+}
 
-        tr.innerHTML = `
-            <td class="course-file-name-cell">
-                <span class="file-emoji">${getFileIconEmoji(f.original_filename)}</span>
-                <span class="file-title" title="${escapeHtml(f.original_filename)}">${escapeHtml(f.original_filename)}</span>
-                ${f.is_pinned == 1 ? '<span class="pinned-tag">📌 Pinned</span>' : ''}
-            </td>
-            <td class="course-file-size-cell">${escapeHtml(f.file_size_formatted || '')}</td>
-            <td class="course-file-date-cell">${escapeHtml(f.upload_date || '')}</td>
-            <td style="text-align: right; white-space: nowrap;">
-                <div class="course-file-actions">
-                    <a href="/api/files.php?action=download&code=${encodeURIComponent(COURSE_CODE)}&file_id=${f.id}" class="btn btn-secondary btn-sm file-download-btn" download>
-                        ⬇️ Download
-                    </a>
-                    ${(IS_TEACHER && isEditMode) ? `
-                        <button type="button" class="btn btn-ghost btn-sm" onclick="togglePinFile(${f.id})" title="${f.is_pinned == 1 ? 'Unpin' : 'Pin to Top'}">
-                            ${f.is_pinned == 1 ? '📌 Unpin' : '📌 Pin'}
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCourseFile(${f.id})" title="Delete file">
-                            🗑️
-                        </button>
-                    ` : ''}
+function renderCurrentCourseDayView() {
+    if (activeDaysData.length === 0) return;
+
+    const currentDay = activeDaysData[currentDayIndex];
+    const totalDays = activeDaysData.length;
+
+    // Header Meta
+    document.getElementById('courseDayCounterLabel').innerText = `Day ${currentDayIndex + 1} of ${totalDays}`;
+    document.getElementById('courseDayMainTitle').innerText = `${currentDay.day_badge} — ${currentDay.title}`;
+    document.getElementById('courseDayFilesBadge').innerText = `${currentDay.total_files} file${currentDay.total_files === 1 ? '' : 's'}`;
+    document.getElementById('courseDaySizeBadge').innerText = currentDay.total_size_formatted;
+
+    // Buttons
+    const prevBtn = document.getElementById('btnCoursePrevDay');
+    const nextBtn = document.getElementById('btnCourseNextDay');
+    if (prevBtn) prevBtn.disabled = (currentDayIndex === 0);
+    if (nextBtn) nextBtn.disabled = (currentDayIndex === totalDays - 1);
+
+    // Date Ribbon Pills
+    const ribbon = document.getElementById('courseDateRibbonPills');
+    if (ribbon) {
+        ribbon.innerHTML = '';
+        activeDaysData.forEach((d, idx) => {
+            const pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = `date-ribbon-pill ${idx === currentDayIndex ? 'active' : ''}`;
+            pill.innerHTML = `<span>${escapeHtml(d.day_badge)}</span> <small>(${d.total_files})</small>`;
+            pill.onclick = () => {
+                currentDayIndex = idx;
+                renderCurrentCourseDayView();
+            };
+            ribbon.appendChild(pill);
+        });
+    }
+
+    // Sort files newest first
+    const sortedDayFiles = [...currentDay.files].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
+    const list = document.getElementById('courseActiveDayFilesList');
+    if (list) {
+        list.innerHTML = sortedDayFiles.map(f => renderCourseFileCard(f, false)).join('');
+    }
+
+    const searchInput = document.getElementById('courseDaySearchInput');
+    if (searchInput) searchInput.value = '';
+}
+
+function changeCourseDay(delta) {
+    const newIdx = currentDayIndex + delta;
+    if (newIdx >= 0 && newIdx < activeDaysData.length) {
+        currentDayIndex = newIdx;
+        renderCurrentCourseDayView();
+    }
+}
+
+function renderCourseFileCard(file, isPinnedArea = false) {
+    const heavyClass = file.is_heavy ? 'file-card-heavy' : '';
+    const heavyBadge = file.is_heavy 
+        ? `<span class="badge badge-heavy-red" title="Heavy File (>100MB)">⚠️ ${file.size_formatted} — Heavy File</span>` 
+        : `<span class="file-size-tag">${file.size_formatted}</span>`;
+
+    const canTeacherAct = (IS_TEACHER && (isEditMode || true));
+
+    const pinBtn = canTeacherAct
+        ? `<button type="button" class="btn-action-pin ${file.is_pinned ? 'is-pinned' : ''}" onclick="togglePinCourseFile(${file.id})" title="${file.is_pinned ? 'Unpin file' : 'Pin to top section'}">
+            <span class="pin-icon">📌</span>
+            <span class="pin-text">${file.is_pinned ? 'Pinned' : 'Pin'}</span>
+           </button>` 
+        : (file.is_pinned ? `<span class="pinned-indicator-pill" title="Pinned by teacher">📌 Pinned</span>` : '');
+
+    const deleteBtn = canTeacherAct
+        ? `<button type="button" class="btn-action-delete" onclick="deleteCourseFile(${file.id}, '${escapeHtml(file.filename)}')" title="Delete file">
+            <span class="delete-icon">🗑️</span>
+           </button>`
+        : '';
+
+    return `
+        <div class="file-item-card ${heavyClass}" id="file-card-${file.id}">
+            <div class="file-card-main">
+                <div class="file-icon-box ${file.type_meta.class}">
+                    <span>${file.type_meta.icon}</span>
                 </div>
-            </td>
-        `;
-        tableBody.appendChild(tr);
+                <div class="file-meta-content">
+                    <div class="file-filename-row">
+                        <h4 class="file-display-name" title="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</h4>
+                        ${heavyBadge}
+                    </div>
+                    <div class="file-submeta-row">
+                        <span class="file-ext-tag">${escapeHtml(file.type_meta.tag)}</span>
+                        <span>&bull;</span>
+                        <span class="file-upload-time">${escapeHtml(file.upload_date)} at ${escapeHtml(file.time_formatted || '')}</span>
+                        <span>&bull;</span>
+                        <span class="file-dl-count">${file.downloads_count} download${file.downloads_count === 1 ? '' : 's'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="file-card-actions">
+                ${pinBtn}
+                ${deleteBtn}
+                <a href="${file.download_url}&code=${encodeURIComponent(COURSE_CODE)}" class="btn btn-primary btn-sm btn-download-file" download>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Download</span>
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+function filterCourseDayFiles(query) {
+    const q = query.trim().toLowerCase();
+    const rows = document.querySelectorAll('#courseActiveDayFilesList .file-item-card');
+    rows.forEach(row => {
+        const titleElem = row.querySelector('.file-display-name');
+        const text = titleElem ? titleElem.innerText.toLowerCase() : '';
+        row.style.display = text.includes(q) ? 'flex' : 'none';
     });
 }
 
-function filterCourseFiles() {
-    const q = document.getElementById('courseFileSearchInput').value.toLowerCase().trim();
-    const rows = document.querySelectorAll('.course-file-row');
-    rows.forEach(r => {
-        const name = r.getAttribute('data-name') || '';
-        r.style.display = name.includes(q) ? '' : 'none';
-    });
-}
-
-/**
- * File Actions: Pin & Delete
- */
-async function togglePinFile(fileId) {
+async function togglePinCourseFile(fileId) {
     try {
         const res = await fetch('/api/files.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'pin',
-                code: COURSE_CODE,
-                file_id: fileId
-            })
+            body: JSON.stringify({ action: 'pin', code: COURSE_CODE, file_id: fileId })
         });
         const data = await res.json();
         if (data.success) {
+            showToast(data.is_pinned ? 'File pinned to top section!' : 'File unpinned.', 'success');
             await loadCourseFiles();
         } else {
-            alert('Failed to update pin: ' + (data.error || ''));
+            showToast(data.error || 'Failed to update pin', 'error');
         }
     } catch (e) {
-        console.error(e);
+        showToast('Network error while toggling pin', 'error');
     }
 }
 
-async function deleteCourseFile(fileId) {
-    if (!confirm('Are you sure you want to delete this course file?')) return;
+async function deleteCourseFile(fileId, filename) {
+    if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
     try {
         const res = await fetch('/api/files.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'delete',
-                code: COURSE_CODE,
-                file_id: fileId
-            })
+            body: JSON.stringify({ action: 'delete', code: COURSE_CODE, file_id: fileId })
         });
         const data = await res.json();
         if (data.success) {
+            showToast('File deleted successfully.', 'success');
             await loadCourseFiles();
         } else {
-            alert('Failed to delete file: ' + (data.error || ''));
+            showToast(data.error || 'Delete failed', 'error');
         }
     } catch (e) {
-        console.error(e);
+        showToast('Network error while deleting file', 'error');
     }
 }
 
 /**
- * Uploads handling
+ * File Upload Handling
  */
 function triggerCourseFileInput() {
-    const input = document.getElementById('courseFileInput');
+    const input = document.getElementById('courseFileInputElem');
     if (input) input.click();
 }
 
 function handleCourseFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) uploadCourseFile(file);
+    const files = e.target.files;
+    if (files.length > 0) {
+        uploadCourseFile(files[0]);
+        e.target.value = '';
+    }
 }
 
-function setupDropZone() {
+function setupCourseDropZone() {
     const dz = document.getElementById('courseDropZone');
     if (!dz) return;
 
@@ -689,31 +783,50 @@ function setupDropZone() {
         dz.addEventListener(name, (e) => {
             e.preventDefault();
             dz.classList.add('drag-active');
-        });
+        }, false);
     });
 
     ['dragleave', 'drop'].forEach(name => {
         dz.addEventListener(name, (e) => {
             e.preventDefault();
             dz.classList.remove('drag-active');
-        });
+        }, false);
     });
 
     dz.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files && files[0]) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
             uploadCourseFile(files[0]);
         }
     });
 }
 
-async function uploadCourseFile(file) {
-    const progress = document.getElementById('courseUploadProgress');
-    const fill = document.getElementById('courseUploadFill');
+function uploadCourseFile(file) {
+    const maxLimit = 500 * 1024 * 1024;
+    const heavyThreshold = 100 * 1024 * 1024;
 
-    if (progress && fill) {
-        progress.style.display = 'block';
-        fill.style.width = '25%';
+    if (file.size > maxLimit) {
+        showToast(`File "${file.name}" exceeds 500 MB limit!`, 'error');
+        return;
+    }
+
+    const progressContainer = document.getElementById('courseUploadProgressContainer');
+    const fileNameElem = document.getElementById('courseUploadFileName');
+    const pctElem = document.getElementById('courseUploadProgressPct');
+    const barElem = document.getElementById('courseUploadProgressBar');
+    const warningElem = document.getElementById('courseUploadWarningNote');
+
+    progressContainer.style.display = 'block';
+    fileNameElem.innerText = `Uploading: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+    pctElem.innerText = '0%';
+    barElem.style.width = '0%';
+
+    if (file.size >= heavyThreshold) {
+        warningElem.style.display = 'block';
+        warningElem.innerHTML = `⚠️ <strong>Heavy File Alert:</strong> This file is over 100 MB.`;
+    } else {
+        warningElem.style.display = 'none';
     }
 
     const formData = new FormData();
@@ -721,49 +834,56 @@ async function uploadCourseFile(file) {
     formData.append('code', COURSE_CODE);
     formData.append('file', file);
 
-    try {
-        const res = await fetch('/api/files.php', {
-            method: 'POST',
-            body: formData
-        });
-        if (fill) fill.style.width = '100%';
-        const data = await res.json();
-        if (data.success) {
-            setTimeout(() => {
-                if (progress) progress.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-            }, 500);
-            await loadCourseFiles();
-        } else {
-            alert('Upload failed: ' + (data.error || 'Unknown error'));
-            if (progress) progress.style.display = 'none';
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Network error during upload.');
-        if (progress) progress.style.display = 'none';
-    }
-}
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/files.php', true);
 
-function getFileIconEmoji(filename) {
-    if (!filename) return '📄';
-    const ext = filename.split('.').pop().toLowerCase();
-    switch (ext) {
-        case 'pdf': return '📕';
-        case 'zip': case 'rar': case '7z': case 'tar': case 'gz': return '📦';
-        case 'png': case 'jpg': case 'jpeg': case 'gif': case 'webp': case 'svg': return '🖼️';
-        case 'mp3': case 'wav': case 'ogg': return '🎵';
-        case 'mp4': case 'mov': case 'webm': return '🎬';
-        case 'py': case 'js': case 'ts': case 'html': case 'css': case 'json': case 'sb3': return '💻';
-        case 'doc': case 'docx': case 'txt': case 'md': return '📝';
-        case 'xls': case 'xlsx': case 'csv': return '📊';
-        case 'ppt': case 'pptx': return '📽️';
-        default: return '📄';
-    }
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            pctElem.innerText = `${pct}%`;
+            barElem.style.width = `${pct}%`;
+        }
+    };
+
+    xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    showToast(`Uploaded "${res.file.filename}" successfully!`, 'success');
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        loadCourseFiles();
+                    }, 500);
+                } else {
+                    showToast(res.error || 'Upload failed', 'error');
+                    progressContainer.style.display = 'none';
+                }
+            } catch (err) {
+                showToast('Server returned invalid response', 'error');
+                progressContainer.style.display = 'none';
+            }
+        } else {
+            showToast(`Upload failed (${xhr.status})`, 'error');
+            progressContainer.style.display = 'none';
+        }
+    };
+
+    xhr.onerror = () => {
+        showToast('Network error during file upload', 'error');
+        progressContainer.style.display = 'none';
+    };
+
+    xhr.send(formData);
 }
 
 function escapeHtml(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 </script>
