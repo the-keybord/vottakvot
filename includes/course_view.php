@@ -83,8 +83,8 @@ if (!is_array($courseCards)) {
         <div class="course-files-grid-layout">
             <!-- LEFT COLUMN: Drag & Drop Card & Pinned Materials -->
             <div class="course-files-sidebar" id="courseFilesSidebar">
-                <!-- Teacher Upload Dropzone (Visible to teacher or when in edit mode) -->
-                <div id="courseDropZone" class="upload-dropzone course-upload-zone" onclick="triggerCourseFileInput()" style="<?= $isProf ? '' : 'display: none;' ?>">
+                <!-- Upload Dropzone (Available to both students and teachers) -->
+                <div id="courseDropZone" class="upload-dropzone course-upload-zone" onclick="triggerCourseFileInput()">
                     <input type="file" id="courseFileInputElem" style="display: none;" onchange="handleCourseFileSelect(event)">
                     <div class="dropzone-content">
                         <div class="dropzone-icon">
@@ -95,7 +95,7 @@ if (!is_array($courseCards)) {
                         <div class="dropzone-text">
                             <h3 style="font-size: 0.95rem; margin-bottom: 0.2rem;">Drag &amp; drop files, or <span class="highlight-link">browse</span></h3>
                             <p class="dropzone-hints" style="font-size: 0.76rem;">
-                                <span>Max 500 MB</span> &bull; <span>Worksheets, slides, starter code</span>
+                                <span>Max 500 MB</span> &bull; <span>Worksheets, homework, starter code</span>
                             </p>
                         </div>
                     </div>
@@ -114,16 +114,16 @@ if (!is_array($courseCards)) {
                 </div>
 
                 <!-- Pinned Materials Section -->
-                <div id="coursePinnedSection" class="pinned-section-card" style="display: none;">
-                    <div class="pinned-section-header">
+                <div id="coursePinnedSection" class="pinned-section-card course-pinned-section" style="display: none;">
+                    <div class="pinned-section-header" style="margin-bottom: 0.65rem;">
                         <div class="pinned-header-title">
                             <span class="pinned-icon">📌</span>
-                            <h2>Pinned Materials</h2>
-                            <span id="coursePinnedCountBadge" class="pinned-count-pill">0 pinned</span>
+                            <h2 style="font-size: 0.95rem;">Pinned Materials</h2>
                         </div>
+                        <span id="coursePinnedCountBadge" class="pinned-count-pill">0 pinned</span>
                     </div>
-                    <div id="coursePinnedFilesList" class="pinned-files-vertical-list">
-                        <!-- Pinned files injected dynamically -->
+                    <div id="coursePinnedFilesList" class="course-pinned-grid">
+                        <!-- Pinned mini cards injected dynamically -->
                     </div>
                 </div>
             </div>
@@ -185,7 +185,7 @@ if (!is_array($courseCards)) {
                     <div class="empty-files-icon">📁</div>
                     <h3>No course files uploaded yet</h3>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
-                        <?= $isProf ? 'Use the upload box on the left to share worksheets, starter files, and class slides.' : 'The teacher has not added any files for this course yet.' ?>
+                        Use the upload box on the left to share worksheets, completed homework, or starter files.
                     </p>
                 </div>
 
@@ -311,13 +311,11 @@ function toggleCourseEditMode() {
         if (btn) btn.classList.add('active');
         if (icon) icon.innerText = '👁️';
         if (text) text.innerText = 'Student View';
-        if (dropZone) dropZone.style.display = 'block';
         showToast('Admin Edit Mode active: tools enabled', 'info');
     } else {
         if (btn) btn.classList.remove('active');
         if (icon) icon.innerText = '✏️';
         if (text) text.innerText = 'Edit Mode';
-        if (dropZone && !IS_TEACHER) dropZone.style.display = 'none';
         showToast('Switched to Student View', 'info');
     }
 
@@ -609,33 +607,30 @@ function renderCoursePinnedSection(pinnedFiles) {
     list.innerHTML = sortedPinned.map(f => {
         const safeId = escapeHtml(String(f.id));
         const safeName = escapeHtml(String(f.filename || f.original_filename || 'file'));
+        const icon = f.type_meta ? f.type_meta.icon : '📄';
         return `
-            <div class="file-item-card" id="pinned-file-${safeId}" style="padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;">
-                <div class="file-card-main">
-                    <div class="file-icon-box ${f.type_meta ? f.type_meta.class : ''}">
-                        <span>${f.type_meta ? f.type_meta.icon : '📄'}</span>
-                    </div>
-                    <div class="file-meta-content">
-                        <div class="file-filename-row">
-                            <h4 class="file-display-name" title="${safeName}" style="font-size: 0.88rem;">${safeName}</h4>
-                            <span class="file-size-tag">${escapeHtml(f.size_formatted || '')}</span>
-                        </div>
+            <div class="course-pinned-mini-card" id="pinned-file-${safeId}">
+                <div class="pinned-mini-top">
+                    <span class="pinned-mini-icon">${icon}</span>
+                    <div class="pinned-mini-info">
+                        <span class="pinned-mini-name" title="${safeName}">${safeName}</span>
+                        <span class="pinned-mini-size">${escapeHtml(f.size_formatted || '')}</span>
                     </div>
                 </div>
-                <div class="file-card-actions">
+                <div class="pinned-mini-actions">
+                    <a href="${f.download_url}&code=${encodeURIComponent(COURSE_CODE)}" class="btn btn-primary btn-sm btn-pinned-dl" download>
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Download</span>
+                    </a>
                     ${canTeacherAct ? `
-                        <button type="button" class="btn-action-pin is-pinned" onclick="togglePinCourseFile('${safeId}')" title="Unpin file">
+                        <button type="button" class="btn-action-pin is-pinned btn-sm" onclick="togglePinCourseFile('${safeId}')" title="Unpin file" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                             <span class="pin-icon">📌</span>
                             <span class="pin-text">Unpin</span>
                         </button>
-                        <button type="button" class="btn-action-delete" onclick="deleteCourseFile('${safeId}', '${safeName}')" title="Delete file">
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <button type="button" class="btn-action-delete btn-sm" onclick="deleteCourseFile('${safeId}', '${safeName}')" title="Delete file" style="padding: 0.25rem 0.5rem;">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     ` : ''}
-                    <a href="${f.download_url}&code=${encodeURIComponent(COURSE_CODE)}" class="btn btn-primary btn-sm btn-download-file" download>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        <span>Download</span>
-                    </a>
                 </div>
             </div>
         `;
