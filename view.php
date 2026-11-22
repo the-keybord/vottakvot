@@ -15,6 +15,7 @@ $expiryStatus = !$isError ? format_expiry_status($resource['expires_at'] ?? null
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title><?= $pageTitle ?> — <?= APP_NAME ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -31,7 +32,6 @@ $expiryStatus = !$isError ? format_expiry_status($resource['expires_at'] ?? null
             <span class="brand-badge">Gateway</span>
         </a>
         <div class="header-actions">
-            <button id="themeToggle" class="btn btn-secondary btn-sm" aria-label="Toggle Theme" title="Toggle Theme"></button>
             <a href="/" class="btn btn-ghost btn-sm">Enter Code</a>
             
             <?php if (is_logged_in()): ?>

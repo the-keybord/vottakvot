@@ -76,6 +76,7 @@ if (!empty($code)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title>tik.tak.md</title>
     <meta name="description" content="Enter your 6-letter class code.">
     <link rel="stylesheet" href="/assets/css/style.css">
@@ -89,7 +90,6 @@ if (!empty($code)) {
     <header class="app-header gateway-header">
         <a href="/" class="gateway-brand">tik.tak.md</a>
         <div class="header-actions">
-            <button id="themeToggle" class="btn btn-ghost btn-sm" aria-label="Toggle Theme" title="Toggle Theme"></button>
             <?php if (is_logged_in()): ?>
                 <a href="/prof/dashboard.php" class="btn btn-ghost btn-sm" title="Dashboard">Dashboard</a>
             <?php else: ?>

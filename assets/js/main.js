@@ -8,29 +8,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Dark / Light Theme Manager
+ * Light Theme Enforcement Manager (Anti-Browser-Dark-Mode)
  */
 function initTheme() {
-    const savedTheme = localStorage.getItem('tiktak_theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    // Explicitly lock document element to light theme
+    document.documentElement.setAttribute('data-theme', 'light');
 
+    // Overwrite any stored dark theme preference in localStorage
+    try {
+        localStorage.setItem('tiktak_theme', 'light');
+    } catch (e) {}
+
+    // Hide any legacy toggle element if present
     const toggleBtn = document.getElementById('themeToggle');
     if (toggleBtn) {
-        updateThemeToggleIcon(toggleBtn, savedTheme);
-        toggleBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('tiktak_theme', newTheme);
-            updateThemeToggleIcon(toggleBtn, newTheme);
-        });
+        toggleBtn.style.display = 'none';
     }
-}
-
-function updateThemeToggleIcon(btn, theme) {
-    btn.innerHTML = theme === 'light' 
-        ? `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`
-        : `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
 }
 
 /**

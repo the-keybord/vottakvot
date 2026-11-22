@@ -101,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title>Professor Login — <?= APP_NAME ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -117,7 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="brand-badge">Professor Portal</span>
         </a>
         <div class="header-actions">
-            <button id="themeToggle" class="btn btn-secondary btn-sm" aria-label="Toggle Theme"></button>
             <a href="/" class="btn btn-ghost btn-sm">Student Gateway</a>
         </div>
     </header>

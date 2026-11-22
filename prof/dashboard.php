@@ -37,6 +37,7 @@ $baseUrl = get_base_url();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title>Professor Dashboard — <?= APP_NAME ?></title>
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -54,7 +55,6 @@ $baseUrl = get_base_url();
             <span class="brand-badge">Professor</span>
         </a>
         <div class="header-actions">
-            <button id="themeToggle" class="btn btn-secondary btn-sm" aria-label="Toggle Theme"></button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="openModal('addTeacherModal')" style="font-size: 0.78rem; opacity: 0.75; font-weight: 500;" title="Create another teacher account">+ Teacher</button>
             <a href="/" target="_blank" class="btn btn-ghost btn-sm">Public Gateway ↗</a>
             <a href="/prof/logout.php" class="btn btn-danger btn-sm">Sign Out</a>
