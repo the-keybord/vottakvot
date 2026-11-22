@@ -44,7 +44,7 @@ if ($action === 'create') {
 
     $userId = $_SESSION['tiktak_user_id'] ?? null;
 
-    if (empty($code) || strlen($code) < 3 || strlen($code) > 10) {
+    if (empty($code) || strlen($code) < 3 || strlen($code) > 10 || is_reserved_resource_code($code)) {
         $code = generate_unique_code($pdo);
     } else {
         // If code already exists, silently generate a new unique one
@@ -239,17 +239,33 @@ if ($action === 'update') {
 
     // Handle code change if requested
     if ($newCode !== '' && $newCode !== $oldCode) {
-        if (strlen($newCode) < 3 || strlen($newCode) > 10) {
+        if (strlen($newCode) < 3 || strlen($newCode) > 10 || !preg_match('/^[A-Z0-9]+$/', $newCode)) {
             echo json_encode(['success' => false, 'error' => 'Access code must be between 3 and 10 alphanumeric characters.']);
             exit;
         }
 
-        // Check if new code is already in use
+        // Check if new code is reserved by the system
+        if (is_reserved_resource_code($newCode)) {
+            echo json_encode(['success' => false, 'error' => "Access code '{$newCode}' is reserved by the system. Please choose a different code."]);
+            exit;
+        }
+
+        // Check if new code is already in use in the database
         $check = $pdo->prepare("SELECT id FROM resources WHERE code = ? AND id != ? LIMIT 1");
         $check->execute([$newCode, $id]);
         if ($check->fetch()) {
             echo json_encode(['success' => false, 'error' => "Access code '{$newCode}' is already taken by another resource."]);
             exit;
+        }
+
+        // Check if filesystem directory already exists on disk
+        $candidateSiteDir = TIKTAK_ROOT . '/sites/' . $newCode;
+        if (is_dir($candidateSiteDir)) {
+            $existingSiteFiles = array_diff(scandir($candidateSiteDir), ['.', '..']);
+            if (!empty($existingSiteFiles) && ($existingRes['type'] ?? '') !== 'hosting') {
+                echo json_encode(['success' => false, 'error' => "A site directory for code '{$newCode}' already exists on the server."]);
+                exit;
+            }
         }
 
         $finalCode = $newCode;
@@ -263,14 +279,8 @@ if ($action === 'update') {
             }
         }
 
-        // If files, update code in resource_files table
-        if (($existingRes['type'] ?? '') === 'files') {
-            try {
-                $pdo->prepare("UPDATE resource_files SET code = ? WHERE resource_id = ?")->execute([$newCode, $id]);
-            } catch (\Throwable $e) {
-                // Ignore if files update encounters issues
-            }
-        }
+        // Migrate storage files (handles files, course, and any resource with attached files)
+        rename_resource_storage($oldCode, $newCode, $id, $pdo);
     }
 
     if (($existingRes['type'] ?? '') === 'hosting') {

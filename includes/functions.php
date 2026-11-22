@@ -20,12 +20,28 @@ function generate_random_code(int $length = 6): string {
 }
 
 /**
+ * Reserved system route names that cannot be used as resource codes
+ */
+function is_reserved_resource_code(string $code): bool {
+    static $reserved = [
+        'API', 'PROF', 'SITES', 'ASSETS', 'CONFIG', 'INCLUDES',
+        'DATA', 'SCRIPTS', 'SCRATCH', 'LOGIN', 'LOGOUT', 'VIEW',
+        'INDEX', 'ADMIN', 'DASHBOARD', 'FAVICON', 'ROBOTS', 'STATIC'
+    ];
+    return in_array(strtoupper(trim($code)), $reserved, true);
+}
+
+/**
  * Generate a unique 6-letter code that does not yet exist in the database
  */
 function generate_unique_code($pdo, int $length = 6): string {
     $attempts = 0;
     while ($attempts < 50) {
         $code = generate_random_code($length);
+        if (is_reserved_resource_code($code)) {
+            $attempts++;
+            continue;
+        }
         $stmt = $pdo->prepare("SELECT id FROM resources WHERE code = ? LIMIT 1");
         $stmt->execute([$code]);
         if (!$stmt->fetch()) {
@@ -472,10 +488,68 @@ function rename_site_directory(string $oldCode, string $newCode): bool {
             }
         }
         delete_site_directory($oldCode);
+        _update_site_github_sync_code($newDir, $newCode);
         return true;
     }
 
-    return @rename($oldDir, $newDir);
+    $res = @rename($oldDir, $newDir);
+    if ($res) {
+        _update_site_github_sync_code($newDir, $newCode);
+    }
+    return $res;
+}
+
+/**
+ * Helper to update code inside .github_sync.json if present
+ */
+function _update_site_github_sync_code(string $siteDir, string $newCode): void {
+    $syncFile = $siteDir . DIRECTORY_SEPARATOR . '.github_sync.json';
+    if (file_exists($syncFile)) {
+        try {
+            $syncData = json_decode(file_get_contents($syncFile), true);
+            if (is_array($syncData)) {
+                $syncData['code'] = $newCode;
+                @file_put_contents($syncFile, json_encode($syncData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            }
+        } catch (\Throwable $e) {}
+    }
+}
+
+/**
+ * Safely migrate all storage files (local and S3/MinIO) and DB records for a resource
+ */
+function rename_resource_storage(string $oldCode, string $newCode, string $resourceId, $pdo): bool {
+    // 1. Rename files in MinIO and local fallback directory
+    try {
+        $minio = MinioClient::getInstance();
+        $minio->renameFolder($oldCode, $newCode);
+    } catch (\Throwable $e) {
+        // Fallback or non-blocking
+    }
+
+    // 2. Query all files associated with this resource and update code & s3_key
+    try {
+        $stmt = $pdo->prepare("SELECT id, stored_filename, s3_key FROM resource_files WHERE resource_id = ?");
+        $stmt->execute([$resourceId]);
+        $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($files)) {
+            $updateStmt = $pdo->prepare("UPDATE resource_files SET code = ?, s3_key = ? WHERE id = ?");
+            foreach ($files as $file) {
+                $fileId = $file['id'];
+                $storedName = $file['stored_filename'] ?? basename($file['s3_key'] ?? '');
+                $newS3Key = $newCode . '/' . $storedName;
+                $updateStmt->execute([$newCode, $newS3Key, $fileId]);
+            }
+        }
+    } catch (\Throwable $e) {
+        // Fallback for general code update
+        try {
+            $pdo->prepare("UPDATE resource_files SET code = ? WHERE resource_id = ?")->execute([$newCode, $resourceId]);
+        } catch (\Throwable $e2) {}
+    }
+
+    return true;
 }
 
 /**

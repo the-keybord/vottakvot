@@ -797,6 +797,16 @@ function openEditModal(resource) {
                 openSiteManager(resource.code, resource.title);
             };
         }
+    } else if (resource.type === 'course') {
+        if (linkContainer) linkContainer.style.display = 'none';
+        if (textContainer) textContainer.style.display = 'none';
+        if (filesContainer) filesContainer.style.display = 'block';
+        if (hostingContainer) hostingContainer.style.display = 'none';
+        if (linksContainer) linksContainer.style.display = 'none';
+        if (consoleLink) {
+            consoleLink.href = `/code=${resource.code}`;
+            consoleLink.innerText = 'Course Dashboard Interface ↗';
+        }
     } else {
         // files
         if (linkContainer) linkContainer.style.display = 'none';
@@ -804,7 +814,10 @@ function openEditModal(resource) {
         if (filesContainer) filesContainer.style.display = 'block';
         if (hostingContainer) hostingContainer.style.display = 'none';
         if (linksContainer) linksContainer.style.display = 'none';
-        if (consoleLink) consoleLink.href = `/code=${resource.code}`;
+        if (consoleLink) {
+            consoleLink.href = `/code=${resource.code}`;
+            consoleLink.innerText = 'File Console Interface ↗';
+        }
     }
 
     openModal('editModal');

@@ -558,6 +558,21 @@ class PocketBaseStatement {
         }
 
         // -------------------------------------------------------------
+        // 20c. UPDATE resource_files SET code = ?, s3_key = ? WHERE id = ?
+        // -------------------------------------------------------------
+        if (preg_match('/UPDATE resource_files SET code = \?,\s*s3_key = \? WHERE id = \?/i', $sql)) {
+            $newCode = strtoupper(trim((string)($params[0] ?? '')));
+            $s3Key = (string)($params[1] ?? '');
+            $id = (string)($params[2] ?? '');
+            $this->pb->update($this->col('resource_files'), $id, [
+                'code' => $newCode,
+                's3_key' => $s3Key
+            ]);
+            $this->affectedRows = 1;
+            return true;
+        }
+
+        // -------------------------------------------------------------
         // 21. DELETE FROM resource_files WHERE id = ?
         // -------------------------------------------------------------
         if (preg_match('/DELETE FROM resource_files WHERE id = \?/i', $sql)) {

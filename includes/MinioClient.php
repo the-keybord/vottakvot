@@ -436,4 +436,138 @@ class MinioClient {
             return false;
         }
     }
+
+    /**
+     * Copy an object in MinIO / S3 and local storage fallback
+     */
+    public function copyObject(string $sourceKey, string $destinationKey): bool {
+        $sourceKey = ltrim($sourceKey, '/');
+        $destinationKey = ltrim($destinationKey, '/');
+
+        // Copy in local fallback if exists
+        $localSrc = $this->localFallbackDir . '/' . $sourceKey;
+        $localDst = $this->localFallbackDir . '/' . $destinationKey;
+        if (file_exists($localSrc)) {
+            $dir = dirname($localDst);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            @copy($localSrc, $localDst);
+        }
+
+        // Copy in MinIO if reachable
+        if ($this->isMinioReachable === null) {
+            $this->ensureBucket();
+        }
+
+        if ($this->isMinioReachable !== false) {
+            try {
+                $keyParts = explode('/', $destinationKey);
+                $encodedKeyParts = array_map('rawurlencode', $keyParts);
+                $uriPath = '/' . rawurlencode($this->bucket) . '/' . implode('/', $encodedKeyParts);
+                $url = $this->getBaseUrl() . $uriPath;
+
+                $srcParts = explode('/', $sourceKey);
+                $encodedSrcParts = array_map('rawurlencode', $srcParts);
+                $copySource = '/' . rawurlencode($this->bucket) . '/' . implode('/', $encodedSrcParts);
+
+                $extraHeaders = [
+                    'x-amz-copy-source' => $copySource,
+                ];
+
+                $headers = $this->getV4Headers('PUT', $uriPath, [], 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', $extraHeaders);
+
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_CUSTOMREQUEST => 'PUT',
+                    CURLOPT_HTTPHEADER => $headers,
+                    CURLOPT_TIMEOUT => 30,
+                    CURLOPT_CONNECTTIMEOUT => 4,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                ]);
+                curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                return ($httpCode >= 200 && $httpCode < 300);
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
+        return file_exists($localDst);
+    }
+
+    /**
+     * Rename all objects from old code prefix to new code prefix (e.g. ABCDEF/ -> XYZ123/)
+     */
+    public function renameFolder(string $oldCode, string $newCode): bool {
+        $oldPrefix = trim($oldCode, '/') . '/';
+        $newPrefix = trim($newCode, '/') . '/';
+
+        // 1. Local fallback directory
+        $localOld = $this->localFallbackDir . '/' . trim($oldCode, '/');
+        $localNew = $this->localFallbackDir . '/' . trim($newCode, '/');
+
+        if (is_dir($localOld)) {
+            if (!is_dir($localNew)) {
+                @mkdir($localNew, 0777, true);
+            }
+            $files = glob($localOld . '/*');
+            if ($files) {
+                foreach ($files as $f) {
+                    if (is_file($f)) {
+                        $target = $localNew . '/' . basename($f);
+                        @rename($f, $target);
+                    }
+                }
+            }
+            @rmdir($localOld);
+        }
+
+        // 2. MinIO remote files
+        if ($this->isMinioReachable === null) {
+            $this->ensureBucket();
+        }
+
+        if ($this->isMinioReachable !== false) {
+            try {
+                $uriPath = '/' . rawurlencode($this->bucket);
+                $queryParams = ['prefix' => $oldPrefix];
+                $url = $this->getBaseUrl() . $uriPath . '?prefix=' . rawurlencode($oldPrefix);
+
+                $headers = $this->getV4Headers('GET', $uriPath, $queryParams);
+
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_HTTPHEADER => $headers,
+                    CURLOPT_TIMEOUT => 15,
+                    CURLOPT_CONNECTTIMEOUT => 4,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                ]);
+                $xmlResponse = curl_exec($ch);
+                curl_close($ch);
+
+                if ($xmlResponse && preg_match_all('~<Key>(.*?)</Key>~i', $xmlResponse, $matches)) {
+                    foreach ($matches[1] as $rawKey) {
+                        $oldKey = html_entity_decode($rawKey);
+                        if (str_starts_with($oldKey, $oldPrefix)) {
+                            $suffix = substr($oldKey, strlen($oldPrefix));
+                            $newKey = $newPrefix . $suffix;
+                            $this->copyObject($oldKey, $newKey);
+                            $this->deleteObject($oldKey);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore MinIO errors and proceed
+            }
+        }
+
+        return true;
+    }
 }

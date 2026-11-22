@@ -621,7 +621,7 @@ $baseUrl = get_base_url();
                         </label>
                         <input type="text" id="editCode" class="form-control" maxlength="10" style="font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;" autocomplete="off" required>
                         <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
-                            Changing the code renames the access URL and automatically moves any micro-host files.
+                            Changing the code updates the access URL and automatically migrates all files, storage, and site directories.
                         </span>
                     </div>
                     <div class="form-group">
