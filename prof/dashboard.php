@@ -359,8 +359,8 @@ $baseUrl = get_base_url();
                                     <td style="text-align: right; white-space: nowrap; width: 1%;">
                                         <div style="display: inline-flex; gap: 0.4rem; align-items: center; justify-content: flex-end; flex-wrap: nowrap; white-space: nowrap;">
                                             <?php if ($r['type'] === 'hosting'): ?>
-                                                <button class="btn btn-primary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="openSiteManager('<?= $r['code'] ?>', '<?= htmlspecialchars(addslashes($r['title'])) ?>')" title="Manage Hosted Web Directory & Files">
-                                                    ⚙️ Manage Site
+                                                <button class="btn btn-primary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="openSiteManager('<?= $r['code'] ?>', '<?= htmlspecialchars(addslashes($r['title'])) ?>')" title="Manage Hosted Web Directory & Files" aria-label="Manage Site">
+                                                    ⚙️
                                                 </button>
                                             <?php endif; ?>
                                             <button class="btn btn-secondary btn-sm" style="white-space: nowrap; flex-shrink: 0;" onclick="showQrCode('<?= $r['code'] ?>', '<?= $fullUrl ?>')" title="Show QR Code for Classroom">

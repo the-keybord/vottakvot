@@ -26,7 +26,8 @@ body {
   --text-muted: #475569;
   --text-dim: #94a3b8;
 
-  --accent-primary: #6366f1; /* Indigo */
+  --accent-primary: #6366f1;
+  /* Indigo */
   --accent-primary-hover: #4f46e5;
   --accent-glow: rgba(99, 102, 241, 0.2);
   --accent-cyan: #0284c7;
@@ -108,8 +109,13 @@ body {
 }
 
 @keyframes pulseOrb {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.15) translate(40px, 30px); }
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+
+  100% {
+    transform: scale(1.15) translate(40px, 30px);
+  }
 }
 
 /* App Header */
@@ -961,8 +967,15 @@ textarea.form-control {
 }
 
 @keyframes slideInToast {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Footer */
@@ -991,19 +1004,24 @@ textarea.form-control {
   .app-header {
     padding: 1rem 1.25rem;
   }
+
   .hero-logo {
     font-size: 2.8rem;
   }
+
   .search-input {
     font-size: 1.2rem;
     letter-spacing: 0.2em;
   }
+
   .search-btn span {
     display: none;
   }
+
   .search-btn {
     padding: 0.85rem 1.1rem;
   }
+
   .resources-table {
     display: block;
     overflow-x: auto;
@@ -1477,8 +1495,14 @@ textarea.form-control {
 }
 
 @keyframes pulseRedBadge {
-  0% { opacity: 0.85; }
-  100% { opacity: 1; filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.5)); }
+  0% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.5));
+  }
 }
 
 .file-card-left {
@@ -1656,24 +1680,30 @@ textarea.form-control {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
+
   .day-files-vertical-list,
   .pinned-files-vertical-list {
     padding: 1rem;
   }
+
   .file-item-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.85rem;
     padding: 1rem;
   }
+
   .file-card-actions {
     width: 100%;
     justify-content: flex-end;
   }
+
   .day-nav-bar {
     padding: 1rem;
     flex-direction: column;
@@ -2496,7 +2526,8 @@ textarea.form-control {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: 0.25em;
-  text-indent: 0.25em; /* Perfectly balances trailing letter spacing horizontally */
+  text-indent: 0.25em;
+  /* Perfectly balances trailing letter spacing horizontally */
   text-transform: uppercase;
   color: var(--text-main);
   text-align: center;
@@ -2804,10 +2835,12 @@ textarea.form-control {
     flex-direction: column;
     align-items: stretch;
   }
+
   .sort-controls-group {
     margin-left: 0;
     justify-content: space-between;
   }
+
   .sort-buttons {
     overflow-x: auto;
   }
@@ -3076,7 +3109,7 @@ textarea.form-control {
   padding: 3px 6px;
   font-size: 0.75rem;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
   transition: all 0.15s ease;
 }
 
@@ -3223,7 +3256,7 @@ textarea.form-control {
   transition: all 0.15s ease;
 }
 
-.color-radio input:checked + .color-dot {
+.color-radio input:checked+.color-dot {
   transform: scale(1.2);
   border-color: #0f172a;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
@@ -3234,6 +3267,7 @@ textarea.form-control {
   .course-files-grid-layout {
     grid-template-columns: 1fr;
   }
+
   .course-scrollable-files-list {
     max-height: 450px;
   }
@@ -3247,22 +3281,16 @@ textarea.form-control {
     align-items: stretch;
     gap: 0.65rem;
   }
+
   .course-projector-banner {
     justify-content: center;
   }
+
   .course-air-carousel-container {
     padding: 1rem 0.75rem 0.25rem;
   }
+
   .course-files-wrapper {
     padding: 0.25rem 0.75rem 1.5rem;
   }
 }
-
-
-
-
-
-
-
-
-
